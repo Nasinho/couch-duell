@@ -37,6 +37,15 @@ button{font:inherit;cursor:pointer}
 .doc.web .hero b{font-size:.75em;opacity:.85;letter-spacing:.06em;text-transform:uppercase}.doc.web .hero h3{margin:.15em 0 0;font-size:1.45em;line-height:1.15}
 .doc.web .body{padding:.6em 1.1em 1em}.doc.web .sec{margin:.7em 0}.doc.web .sec h4{margin:0 0 .2em;font-size:1em;color:#1b2233}.doc.web .sec p{margin:0}
 .doc.web .com{border-top:1px solid #e3e5ea;margin-top:.8em;padding-top:.5em}.doc.web .com div{background:#f3f4f7;border-radius:.6em;padding:.4em .7em;margin:.4em 0;font-size:.9em}
+.doc.web .sbar{background:var(--wc);color:#fff;font-weight:800;padding:.4em 1.1em;letter-spacing:.02em}
+.doc.web .prof{display:flex;gap:.8em;padding:.9em 1.1em;border-bottom:1px solid #e3e5ea}.doc.web .av{flex:none;width:2.6em;height:2.6em;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800}
+.doc.web .prof u{text-decoration:none;color:#7a8090}.doc.web .prof p{margin:.2em 0}.doc.web .prof small{color:#7a8090}
+.doc.web .post{border:1px solid #e3e5ea;border-radius:.7em;padding:.6em .8em;margin:.6em 0}.doc.web .post .ph{color:#7a8090;font-size:.8em}.doc.web .post p{margin:.3em 0}.doc.web .post .lk{color:#d0315a;font-size:.85em}
+.doc.web .fpost{border-bottom:1px solid #e3e5ea;padding:.6em 0}.doc.web .fu{display:flex;align-items:center;gap:.5em}.doc.web .fu .av{width:1.8em;height:1.8em;font-size:.8em}.doc.web .fu small{color:#7a8090;margin-left:auto}.doc.web .fpost p{margin:.35em 0 0}
+.doc.web .sq{border:1px solid #d5d8df;border-radius:99px;padding:.35em .9em;margin:.3em 0 .6em}.doc.web .hit{margin:.75em 0}.doc.web .hit .hq{font-size:.78em;color:#7a8090}
+.doc.web .hit a{display:block;color:#1a4fc4;font-weight:600}.doc.web .hit cite{display:block;font-style:normal;color:#1d7a3a;font-size:.8em}.doc.web .hit p{margin:.15em 0 0;font-size:.9em}
+.doc.web.login .body{padding:1em 1.2em}.doc.web .lk2{font-weight:800;color:#8a6a00;letter-spacing:.05em;margin-bottom:.4em}.doc.web .lf{margin-top:.8em;padding:.7em .9em;border:1px solid #cfd3dc;border-radius:.5em;background:#f6f7f9;font-family:ui-monospace,Menlo,monospace}
+.doc.web .lf.ok{border-color:#2f9e6a;color:#1d7a4f}.doc.web .lh{margin-top:.6em;color:#8a6a00}
 .doc.web .com u{text-decoration:none;color:#7a8090;font-size:.8em;margin-left:.5em}.doc.web .stars{color:#e6a700;letter-spacing:.05em}
 .doc.zeitung .zt{font-family:"Playfair Display",serif;font-weight:900;font-size:1.1em;border-bottom:3px double var(--ink);text-align:center;padding-bottom:.2em;margin-bottom:.4em;letter-spacing:.05em}
 .doc.zeitung h3{font-family:"Playfair Display",serif;font-size:1.6em;line-height:1.1}
@@ -51,6 +60,13 @@ button{font:inherit;cursor:pointer}
 .doc.foto{background:#fdfdfb;padding:1em 1em 1.4em;font-family:Caveat,cursive}
 .doc.foto img{width:100%;display:block;border-radius:2px;background:#222}
 .doc.foto .cap{font-size:1.4em;margin-top:.4em}
+.doc.lock{background:linear-gradient(160deg,#3b404c,#252932);color:#e9ecf3;border:2px solid #59606f;font-family:Inter,sans-serif}
+.doc.lock h3{color:#fff}.doc.lock .sub{color:#aab1c0}.doc.lock .lk{font-weight:800;font-size:.75em;letter-spacing:.1em;text-transform:uppercase;color:#f1c75b;margin-bottom:.4em}
+.doc.lock.open .lk{color:#5fd39a}.doc.lock .lq{margin-top:.8em;padding:.5em .8em;border:2px dashed #f1c75b;border-radius:.4em;font-family:ui-monospace,Menlo,monospace;color:#f1c75b}
+.doc.lock.open .lq{border-color:#5fd39a;color:#5fd39a}.doc.lock .lh{margin-top:.6em;color:#ffd98a}
+.reward{margin:.9em 0 .4em;color:#5fd39a;font:800 1em Inter,sans-serif}
+.doc.foto .vm{margin-top:.7em;padding:.55em .8em;background:#fff8d6;border-left:4px solid #d9a400;font:1em/1.45 Inter,sans-serif;color:#2a2a2a}
+.doc.foto .vm b{display:block;font-size:.7em;letter-spacing:.08em;text-transform:uppercase;color:#8a6a00;margin-bottom:.15em}
 .doc.foto .cred{font:11px/1.3 Inter,sans-serif;color:#8a8f9c;margin-top:.5em}
 .doc.foto .ph{aspect-ratio:4/3;background:repeating-linear-gradient(45deg,#2d3038,#2d3038 12px,#33373f 12px,#33373f 24px);color:#cfd3dc;display:flex;align-items:center;justify-content:center;text-align:center;padding:1.5em;font-family:Inter,sans-serif;font-size:.9em}
 .doc.audio{background:#202530;color:var(--txt);font-family:Inter,sans-serif}
@@ -208,7 +224,7 @@ label.l{display:block;color:var(--mute);font-size:13px;font-weight:600;margin:16
    Der Fernseher schreibt mit Gemini den Fall (Fallplan → Kapitel → Fotos → Stimmen), hält den Spielstand
    und speichert alles in IndexedDB, damit ein Neuladen den Fall nicht beendet.
    ===================================================================== */
-const APPV='2026-11-15kb';
+const APPV='2026-11-15ke';
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const now=()=>Date.now();
@@ -219,8 +235,8 @@ const QS=new URLSearchParams(location.search);
 let ROOM=(QS.get('r')||location.hash.slice(1)||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,4);
 const MODE=ROOM||QS.has('join')?'phone':'tv';
 const COLORS=['#d23c46','#4c8dff','#3fb37f','#e6a83a','#a46bff','#ff7ab6'];
-const ICON={protokoll:'🗣️',chat:'💬',email:'✉️',brief:'📄',notiz:'📝',zeitung:'📰',liste:'📋',bericht:'🔬',foto:'📷',audio:'🎧',karte:'🗺️',webseite:'🌐'};
-const TYPNAME={protokoll:'Vernehmung',chat:'Chatverlauf',email:'E-Mail',brief:'Brief',notiz:'Notiz',zeitung:'Zeitung',liste:'Liste',bericht:'Bericht',foto:'Foto',audio:'Tonaufnahme',karte:'Lageplan',webseite:'Webseite'};
+const ICON={protokoll:'🗣️',chat:'💬',email:'✉️',brief:'📄',notiz:'📝',zeitung:'📰',liste:'📋',bericht:'🔬',foto:'📷',audio:'🎧',karte:'🗺️',webseite:'🌐',raetsel:'🔒'};
+const TYPNAME={protokoll:'Vernehmung',chat:'Chatverlauf',email:'E-Mail',brief:'Brief',notiz:'Notiz',zeitung:'Zeitung',liste:'Liste',bericht:'Bericht',foto:'Foto',audio:'Tonaufnahme',karte:'Lageplan',webseite:'Webseite',raetsel:'Verschlossen'};
 const MARKS={q:'offen',v:'verdächtig',e:'entlastet'};
 const fmtT=ms=>{const s=Math.max(0,Math.floor(ms/1000));return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`};
 
@@ -332,11 +348,14 @@ async function commons(q){
     .filter(x=>x.i&&/jpe?g|png|webp/.test(x.i.mime||'')&&x.i.width>=640&&x.i.height>=400&&x.i.width<=x.i.height*2.6&&!/logo|map|karte|plan|diagram|flag|wappen|coat of arms|icon|svg|chart|portrait/i.test(x.t))}
 async function findPhoto(b){
   const words=String(b.suche||b.bild||b.titel||'').replace(/[^\p{L}\p{N} ]/gu,' ').split(/\s+/).filter(Boolean);
-  const ort=String(C.ort||'').split(/[,·]/)[0].trim();
+  const ort=String(C.ort||'').split(/[,·(]/)[0].trim();
   const qs=[words.slice(0,4).join(' '),words.slice(0,2).join(' '),ort&&words[0]?ort+' '+words[0]:'',ort].filter((q,i,a)=>q&&a.indexOf(q)===i);
   const used=new Set(C.kapitel.flatMap(c=>c.beweise).map(x=>x.photoFile).filter(Boolean));
-  for(const q of qs){let hits=[];try{hits=await commons(q)}catch(e){}
-    const h=hits.find(x=>!used.has(x.t));if(!h)continue;
+  // Treffer, dessen Dateiname am meisten Suchwörter enthält; ohne jede Übereinstimmung erst die nächste Suche probieren
+  const key=[...words,ort].map(norm).filter(w=>w.length>3);const fit=x=>key.filter(w=>norm(x.t).includes(w)).length;
+  for(const [qi,q] of qs.entries()){let hits=[];try{hits=await commons(q)}catch(e){}
+    const free=hits.filter(x=>!used.has(x.t));if(!free.length)continue;
+    const h=free.map((x,i)=>({x,sc:fit(x)*10-i})).sort((a,b)=>b.sc-a.sc)[0].x;if(!fit(h)&&qi<qs.length-1)continue;
     try{const r=await fetch(h.i.thumburl||h.i.url);if(!r.ok)continue;const bl=await shrink(await r.blob());
       const md=h.i.extmetadata||{};b.photoFile=h.t;
       b.credit=`Foto: ${stripTags(md.Artist&&md.Artist.value).slice(0,60)||'unbekannt'} · ${stripTags(md.LicenseShortName&&md.LicenseShortName.value)||'freie Lizenz'} · Wikimedia Commons`;
@@ -359,9 +378,10 @@ async function ttsPart(lines,people,stil){
   const names=[...new Set(lines.map(l=>l.s))];
   const tag=s=>norm(s).slice(0,20)||'sprecher';
   let text,speech;
-  if(names.length===1||GEM.noMulti){text=`${stil?`Sprich auf Deutsch, ${stil}:\n`:'Sprich auf Deutsch:\n'}${(names.length>1?lines.map(l=>`${l.s}: ${l.t}`):lines.map(l=>l.t)).join('\n')}`;
+  // Nur der reine Sprechtext – neuere Sprachmodelle lesen Regieanweisungen und Namen sonst wörtlich mit vor
+  if(names.length===1||GEM.noMulti){text=lines.map(l=>l.t).join('\n');
     speech={voiceConfig:{prebuiltVoiceConfig:{voiceName:voiceFor(names[0],(people[names[0]]||{}).g)}}}}
-  else{text=`Lies dieses Gespräch auf Deutsch vor${stil?` (${stil})`:''}:\n`+lines.map(l=>`${tag(l.s)}: ${l.t}`).join('\n');
+  else{text=lines.map(l=>`${tag(l.s)}: ${l.t}`).join('\n');
     speech={multiSpeakerVoiceConfig:{speakerVoiceConfigs:names.map(n=>({speaker:tag(n),voiceConfig:{prebuiltVoiceConfig:{voiceName:voiceFor(n,(people[n]||{}).g)}}}))}}}
   let last;const ep=GEN.epoch;
   for(let a=0;a<3;a++){if(ep!==GEN.epoch)throw ABORT;const tl=alive(GEM.tts);if(!tl.length)throw last||Object.assign(new Error('Sprachkontingent für diesen Key aufgebraucht'),{code:'no_model'});
@@ -401,7 +421,7 @@ Entwirf einen ORIGINELLEN, logisch wasserdichten Kriminalfall auf Deutsch:
 - 4 bis 5 Verdächtige (verdaechtig:true) mit nachvollziehbarem Motiv und Alibi; genau einer ist schuldig. Dazu 1–2 Zeugen (verdaechtig:false). Keine echten, lebenden Prominenten.
 - Fair Play: Alles zur Lösung steckt in den Beweisen. Der Täter wird erst durch die KOMBINATION mehrerer Beweise aus verschiedenen Kapiteln überführt (z. B. widerlegtes Alibi + Motiv + Spur). Mindestens zwei falsche Fährten, die sich auflösen lassen.
 - Genau 3 Kapitel mit je ${n} Beweisen. Jedes Kapitel endet mit einem Ermittlungsauftrag, dessen Antwort sich eindeutig aus den bis dahin freigeschalteten Beweisen ableiten lässt (nicht wörtlich in einem einzigen Beweis steht). Auftragstypen: "person" (Antwort ist eine Personen-ID), "auswahl" (genau 4 Optionen, Antwort ist eine davon), "code" (Zahl oder kurzes Wort, max. 12 Zeichen, z. B. PIN, Uhrzeit wie 23:40, Kennzeichen – entsteht durch Kombinieren). Nach Kapitel 3 folgt die Anklage (Täter, Motiv, Methode, entscheidender Beweis) – die Kapitelaufträge fragen deshalb noch NICHT direkt nach dem Täter.
-- Beweistypen: protokoll (Vernehmung), chat, email, brief, notiz (handschriftlich), zeitung, liste (Tabelle: Anrufliste, Kontoauszug, Kassenbon, Dienstplan, Fahrtenbuch …), bericht (Obduktion, Spurensicherung, Gutachten), foto, audio (Notruf, Mailbox, Mitschnitt – höchstens 2 Sprecher), karte (Lageplan), webseite (Firmenseite, Social-Media-Profil, Bewertungsportal, Blog, Online-Shop, Vereinsseite – gern mit verräterischen Kommentaren oder Zeitstempeln). Je Kapitel genau 1 foto und genau 1 audio, im ganzen Fall genau 1 karte und 1–2 webseite, sonst bunt gemischt.
+- Beweistypen: protokoll (Vernehmung), chat, email, brief, notiz (handschriftlich), zeitung, liste (Tabelle: Anrufliste, Kontoauszug, Kassenbon, Dienstplan, Fahrtenbuch …), bericht (Obduktion, Spurensicherung, Gutachten), foto, audio (Notruf, Mailbox, Mitschnitt – höchstens 2 Sprecher), karte (Lageplan), webseite (Firmenseite, Social-Media-Profil, Bewertungsportal, Blog, Online-Shop, Vereinsseite – gern mit verräterischen Kommentaren oder Zeitstempeln). raetsel (verschlossener Gegenstand: Tresor, gesperrtes Handy, Zahlenschloss, Laptop-Passwort, verschlüsselte Notiz – der Code lässt sich nur durch Kombinieren anderer Beweise herausfinden, z. B. Geburtsdatum aus dem Bericht + Hinweis im Chat; dahinter liegt ein Bonus-Beweis mit einer wichtigen Spur). Je Kapitel genau 1 foto, genau 1 audio und genau 1 raetsel, im ganzen Fall genau 1 karte und 2–3 webseite (verschiedene layouts), sonst bunt gemischt. Ein raetsel darf auch ein passwortgeschützter Login einer Fake-Webseite sein (art "Login", Feld "url", belohnung vom typ webseite). Beim raetsel beschreibt "inhalt" den Gegenstand, die richtige Antwort, wie man sie herleitet und was dahinter steckt.
 - "inhalt" beschreibt knapp, was im Beweis steht und welche Spur/falsche Fährte er enthält (für die Autorin der Kapitel, nicht für die Spieler).
 - "hinweise": 3 gestufte Tipps je Auftrag (sanft → deutlich → fast die Lösung), die auf konkrete Beweise verweisen.
 - "ermittler": die leitende Kommissarin/der Kommissar, die/der den Spielern die Aufträge gibt.
@@ -427,12 +447,17 @@ Felder je Typ (zusätzlich immer "id","typ","titel","untertitel" (Aktenzeichen/A
 - email: "von","an","betreff","text"
 - brief / notiz: "text", optional "unterschrift"
 - zeitung: "zeitung","ueberschrift","text"
-- webseite: "url" (erfunden, z. B. www.hotel-dunas-mar.es/team),"seite" (Name der Seite),"art" (Firmenseite, Profil, Bewertungen, Blog, Shop …),"ueberschrift","abschnitte":[{"titel":"…","text":"…"}] (2–4),"kommentare":[{"von":"…","zeit":"…","t":"…","sterne":0-5}] (0–5, sterne nur bei Bewertungen)
+- webseite (erfundene Fake-Webseite, wirkt echt): "layout" – eine von: "firma" (Firmen-/Hotel-/Vereinsseite), "blog", "shop", "news", "bewertung" (Bewertungsportal), "social" (Social-Media-Profil), "forum" (Forum-Thread), "suche" (Suchverlauf/Suchergebnisse aus dem Browser einer Person). Immer: "url" (erfunden, z. B. www.hotel-dunas-mar.es/team),"seite" (Name der Seite/Plattform, erfunden – keine echten Marken),"ueberschrift".
+  · firma/blog/shop/news/bewertung: "abschnitte":[{"titel":"…","text":"…"}] (2–4),"kommentare":[{"von":"…","zeit":"…","t":"…","sterne":0-5}] (0–5, sterne nur bei bewertung)
+  · social: "profil":{"name":"…","handle":"@…","bio":"…","ort":"…","follower":1234},"beitraege":[{"zeit":"…","t":"…","likes":12,"ort":"optional"}] (3–6),"kommentare" (0–5)
+  · forum: "beitraege":[{"von":"Nutzername","zeit":"…","t":"…"}] (4–8)
+  · suche: "treffer":[{"zeit":"21:43","suchanfrage":"…","titel":"…","url":"…","t":"Vorschautext"}] (5–10, chronologisch – verrät, wonach jemand gesucht hat)
 - liste: "spalten":["…"],"zeilen":[["…"]] (6–14 Zeilen),"text" optional
 - bericht: "felder":[{"k":"…","v":"…"}],"text"
-- foto: "suche": 2–4 ENGLISCHE Suchbegriffe für ein echtes, frei lizenziertes Foto auf Wikimedia Commons, das den Ort oder Gegenstand allgemein zeigt (z. B. "Maspalomas dunes", "hotel parking lot night", "broken wine glass"; real existierende Orte bevorzugt, keine Personen), "bild": kurze englische Bildbeschreibung, "text": Beschriftung der Spurensicherung auf Deutsch (1–3 Sätze, was auf DIESEM Beweisfoto zu sehen ist, inkl. aller Details, die man zum Lösen braucht – das echte Foto zeigt nur die Umgebung)
+- foto: Das Bild ist ein ECHTES, frei lizenziertes Foto von Wikimedia Commons, das nur den Ort bzw. einen typischen Gegenstand zeigt – KEINE Spuren. "suche": 2–4 ENGLISCHE Suchbegriffe, möglichst mit dem echten Ortsnamen (z. B. "Schloss Solitude Stuttgart", "Maspalomas dunes", "Stuttgart Schlossplatz night"; Gegenstände nur allgemein wie "espresso cup"; keine Personen), "bildtext": 1 Satz auf Deutsch, was das Foto allgemein zeigt (Ort/Ansicht, OHNE Spurendetails), "text": Vermerk der Spurensicherung (1–3 Sätze: welche Spuren dort gefunden wurden, inkl. aller Details, die man zum Lösen braucht)
 - audio: "art" (z. B. Notruf, Mailbox, Mitschnitt),"stil": Regieanweisung für die Sprecher (z. B. "aufgeregt, flüsternd"),"sprecher":[{"name":"…","geschlecht":"w"}] (1–2),"zeilen":[{"s":"Name","t":"…"}] (insgesamt höchstens 130 Wörter)
 - karte: "orte":[{"name":"…","lat":27.75,"lon":-15.57,"notiz":"…"}] (4–8 echte Orte mit korrekten Koordinaten)
+- raetsel: "art" (Tresor, Handy, Zahlenschloss, Laptop, Geheimschrift …),"text" (2–4 Sätze: was die Ermittler vor sich haben – z. B. Tastenfeld, eingeritzte Symbole, ein Zettel daneben; ohne die Lösung zu verraten),"frage" (was eingegeben werden muss, z. B. "4-stellige PIN"),"antwort" (max. 12 Zeichen, eindeutig – herleitbar NUR durch Kombinieren von Beweisen dieses oder früherer Kapitel),"hinweis" (1 Tipp, der auf die richtigen Beweise zeigt),"url" (nur bei art "Login"),"belohnung": vollständiger Bonus-Beweis, der nach dem Öffnen erscheint, mit "typ" (notiz, brief, email, chat, liste, bericht oder webseite), "titel" und den Feldern dieses Typs
 Texte 80–220 Wörter. Antworte ausschließlich mit JSON: {"beweise":[…]}`}
 
 const GEN={busy:false,steps:[],chars:0,err:'',errAt:0,epoch:0,ctl:null};const ABORT=new Error('abgebrochen');
@@ -462,7 +487,7 @@ function fixPlan(p){
   p.titel=String(p.titel||'Ein rätselhafter Fall').slice(0,80);p.ort=String(p.ort||'').slice(0,80);p.datum=String(p.datum||'').slice(0,60);
   p.ermittler=p.ermittler&&p.ermittler.name?p.ermittler:{name:'Kommissarin Weber',geschlecht:'w'};
   p.personen=p.personen.filter(x=>x&&x.id&&x.name).slice(0,8).map(x=>({...x,geschlecht:/^(w|f)/i.test(x.geschlecht||'')?'w':'m',verdaechtig:x.verdaechtig!==false}));
-  let n=0;p.kapitel=p.kapitel.slice(0,4).map(c=>({...c,titel:String(c.titel||'Kapitel').slice(0,60),beweise:c.beweise.filter(b=>b&&b.id).map(b=>({...b,typ:ICON[b.typ]?b.typ:'notiz'})),
+  let n=0;p.kapitel=p.kapitel.slice(0,4).map(c=>({...c,titel:String(c.titel||'').replace(/^\s*Kapitel\s*\d+\s*[:.·–-]\s*/i,'').slice(0,60)||'Kapitel',beweise:c.beweise.filter(b=>b&&b.id).map(b=>({...b,typ:ICON[b.typ]?b.typ:'notiz'})),
     auftrag:{...c.auftrag,typ:['person','auswahl','code'].includes(c.auftrag.typ)?c.auftrag.typ:'code',hinweise:(Array.isArray(c.auftrag.hinweise)?c.auftrag.hinweise:[]).slice(0,3).map(String)}}));
   p.kapitel.forEach(c=>{const a=c.auftrag;if(a.typ==='auswahl'){a.optionen=a.optionen.map(String).slice(0,5);if(typeof a.antwort==='number')a.antwort=a.optionen[a.antwort];
     if(!a.optionen.some(o=>norm(o)===norm(a.antwort)))a.optionen[a.optionen.length-1]=String(a.antwort);a.optionen=shuffle(a.optionen)}});
@@ -476,7 +501,7 @@ function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Ma
 const evById=id=>{if(!C)return null;for(const c of C.kapitel)for(const b of c.beweise)if(b.id===id)return b;return null};
 const evText=b=>[b.titel,b.untertitel,b.datum,b.text,b.von,b.an,b.betreff,b.ueberschrift,b.unterschrift,
   ...(b.zeilen||[]).map(z=>Array.isArray(z)?z.join(' '):`${z.s}: ${z.t}`),...(b.nachrichten||[]).map(m=>`${m.von} ${m.zeit}: ${m.t}`),
-  ...(b.felder||[]).map(f=>`${f.k}: ${f.v}`),b.url,b.seite,...(b.abschnitte||[]).map(a=>`${a.titel}: ${a.text}`),...(b.kommentare||[]).map(k=>`${k.von} ${k.zeit}: ${k.t}`),...(b.orte||[]).map(o=>`${o.name}: ${o.notiz||''}`)].filter(Boolean).join('\n');
+  ...(b.felder||[]).map(f=>`${f.k}: ${f.v}`),b.url,b.seite,...(b.abschnitte||[]).map(a=>`${a.titel}: ${a.text}`),b.profil?`${b.profil.name} ${b.profil.handle}: ${b.profil.bio}`:'',...(b.beitraege||[]).map(x=>`${x.von||''} ${x.zeit}: ${x.t}`),...(b.treffer||[]).map(x=>`${x.zeit} „${x.suchanfrage}“ → ${x.titel}`),...(b.kommentare||[]).map(k=>`${k.von} ${k.zeit}: ${k.t}`),...(b.orte||[]).map(o=>`${o.name}: ${o.notiz||''}`),b.frage,b.antwort?'Lösung: '+b.antwort:'',b.belohnung?'Inhalt: '+evText(b.belohnung):''].filter(Boolean).join('\n');
 
 async function saveCase(){if(C)await DB.set('case',C)}
 async function saveProg(){await DB.set('prog',{...K,toast:null,playing:null})}
@@ -545,12 +570,22 @@ function cleanEv(b){const s=v=>v==null?'':String(v).slice(0,4000),arr=v=>Array.i
     case 'email':Object.assign(o,{von:s(b.von),an:s(b.an),betreff:s(b.betreff),text:s(b.text)});break;
     case 'brief':case 'notiz':Object.assign(o,{text:s(b.text),unterschrift:s(b.unterschrift)});break;
     case 'zeitung':Object.assign(o,{zeitung:s(b.zeitung),ueberschrift:s(b.ueberschrift),text:s(b.text)});break;
-    case 'webseite':Object.assign(o,{url:s(b.url).slice(0,120),seite:s(b.seite).slice(0,80),art:s(b.art).slice(0,40),ueberschrift:s(b.ueberschrift).slice(0,160),
+    case 'webseite':Object.assign(o,{layout:['firma','blog','shop','news','bewertung','social','forum','suche'].includes(b.layout)?b.layout:'firma',
+      profil:b.profil&&typeof b.profil==='object'?{name:s(b.profil.name).slice(0,60),handle:s(b.profil.handle).slice(0,40),bio:s(b.profil.bio).slice(0,300),ort:s(b.profil.ort).slice(0,60),follower:Math.max(0,Math.round(+b.profil.follower||0))}:null,
+      beitraege:arr(b.beitraege).filter(x=>x&&x.t).slice(0,10).map(x=>({von:s(x.von).slice(0,40),zeit:s(x.zeit).slice(0,30),t:s(x.t),likes:Math.max(0,Math.round(+x.likes||0)),ort:s(x.ort).slice(0,60)})),
+      treffer:arr(b.treffer).filter(x=>x&&(x.titel||x.suchanfrage)).slice(0,12).map(x=>({zeit:s(x.zeit).slice(0,30),suchanfrage:s(x.suchanfrage).slice(0,120),titel:s(x.titel).slice(0,120),url:s(x.url).slice(0,120),t:s(x.t).slice(0,400)})),
+      url:s(b.url).slice(0,120),seite:s(b.seite).slice(0,80),art:s(b.art).slice(0,40),ueberschrift:s(b.ueberschrift).slice(0,160),
       abschnitte:arr(b.abschnitte).filter(a=>a&&(a.text||a.titel)).slice(0,6).map(a=>({titel:s(a.titel).slice(0,90),text:s(a.text)})),
       kommentare:arr(b.kommentare).filter(k=>k&&k.t).slice(0,8).map(k=>({von:s(k.von).slice(0,40),zeit:s(k.zeit).slice(0,30),t:s(k.t),sterne:Math.max(0,Math.min(5,Math.round(+k.sterne||0)))}))});break;
     case 'liste':o.spalten=arr(b.spalten).map(s).slice(0,8);o.zeilen=arr(b.zeilen).filter(Array.isArray).slice(0,30).map(r=>r.map(s).slice(0,8));o.text=s(b.text);break;
     case 'bericht':o.felder=arr(b.felder).filter(f=>f&&f.k).slice(0,20).map(f=>({k:s(f.k).slice(0,60),v:s(f.v)}));o.text=s(b.text);break;
-    case 'foto':o.bild=s(b.bild).slice(0,1500);o.suche=s(b.suche).slice(0,80);o.text=s(b.text);break;
+    case 'raetsel':{Object.assign(o,{url:s(b.url).slice(0,120),art:s(b.art).slice(0,40),text:s(b.text),frage:s(b.frage).slice(0,120),antwort:s(b.antwort).slice(0,40).trim(),hinweis:s(b.hinweis).slice(0,300)});
+      const r=b.belohnung&&typeof b.belohnung==='object'?b.belohnung:{typ:'notiz',text:s(b.plan)};
+      const t=['notiz','brief','email','chat','liste','bericht','protokoll','zeitung','webseite'].includes(r.typ)?r.typ:'notiz';
+      o.belohnung=cleanEv({...r,id:b.id+'r',typ:t,ch:b.ch,titel:r.titel||'Fundstück'});delete o.belohnung.plan;
+      // ohne Code nicht lösbar → als normaler Beweis zeigen
+      if(!o.antwort)return {...o.belohnung,id:b.id,titel:o.titel||o.belohnung.titel,plan:b.plan};break}
+    case 'foto':o.bild=s(b.bild).slice(0,1500);o.suche=s(b.suche).slice(0,80);o.bildtext=s(b.bildtext).slice(0,300);o.text=s(b.text);break;
     case 'audio':Object.assign(o,{art:s(b.art),stil:s(b.stil).slice(0,200),sprecher:arr(b.sprecher).slice(0,4).map(x=>({name:s(x&&x.name).slice(0,40),geschlecht:/^(w|f)/i.test((x&&x.geschlecht)||'')?'w':'m'})),zeilen:arr(b.zeilen).filter(z=>z&&z.t).slice(0,30).map(z=>({s:s(z.s).slice(0,40),t:s(z.t)}))});break;
     case 'karte':o.orte=arr(b.orte).filter(x=>x&&isFinite(+x.lat)&&isFinite(+x.lon)).slice(0,10).map(x=>({name:s(x.name).slice(0,60),lat:+x.lat,lon:+x.lon,notiz:s(x.notiz).slice(0,200)}));o.text=s(b.text);break;
     default:o.text=s(b.text||b.plan)}
@@ -580,15 +615,32 @@ function docHTML(b,{img='',playing=false,heard=true}={}){
     case 'email':return `<div class="doc email">${head}<div class="kv"><b>Von</b><span>${esc(b.von)}</span><b>An</b><span>${esc(b.an)}</span><b>Betreff</b><span>${esc(b.betreff)}</span></div>${P(b.text)}</div>`;
     case 'brief':return `<div class="doc brief">${head}${P(b.text)}${b.unterschrift?`<p style="font-family:Caveat,cursive;font-size:1.5em">${esc(b.unterschrift)}</p>`:''}</div>`;
     case 'notiz':return `<div class="doc notiz">${P(b.text)}${b.unterschrift?`<p>– ${esc(b.unterschrift)}</p>`:''}<div class="sub" style="font-size:.6em">${esc(b.titel)}</div></div>`;
-    case 'webseite':{const hue=[...String(b.seite||b.url||'x')].reduce((a,c)=>a+c.charCodeAt(0),0)%360;
-      return `<div class="doc web"><div class="bar"><i></i><i></i><i></i><span class="url">🔒 ${esc(b.url||'www.example.org')}</span></div>
+    case 'webseite':{const hue=[...String(b.seite||b.url||'x')].reduce((a,c)=>a+c.charCodeAt(0),0)%360,L=b.layout||'firma';
+      const bar=`<div class="bar"><i></i><i></i><i></i><span class="url">🔒 ${esc(b.url||'www.example.org')}</span></div>`;
+      const coms=(b.kommentare||[]).length?`<div class="com">${b.kommentare.map(k=>`<div><b>${esc(k.von)}</b><u>${esc(k.zeit)}</u>${k.sterne?` <span class="stars">${'★'.repeat(k.sterne)}${'☆'.repeat(5-k.sterne)}</span>`:''}<br>${esc(k.t)}</div>`).join('')}</div>`:'';
+      const sub=`<div class="sub">${esc([TYPNAME.webseite,b.datum].filter(Boolean).join(' · '))}</div>`;
+      if(L==='social'){const pr=b.profil||{};
+        return `<div class="doc web social">${bar}<div class="sbar" style="--wc:hsl(${hue} 60% 45%)">${esc(b.seite||'Social')}</div>
+        <div class="prof"><span class="av" style="background:hsl(${hue} 45% 45%)">${esc((pr.name||b.titel||'?')[0])}</span><div><b>${esc(pr.name||b.titel)}</b> <u>${esc(pr.handle||'')}</u><p>${esc(pr.bio||'')}</p><small>${pr.ort?'📍 '+esc(pr.ort)+' · ':''}${pr.follower?esc(pr.follower.toLocaleString('de-DE'))+' Follower':''}</small></div></div>
+        <div class="body">${sub}${(b.beitraege||[]).map(x=>`<div class="post"><div class="ph">${esc(x.zeit)}${x.ort?' · 📍 '+esc(x.ort):''}</div>${P(x.t)}<div class="lk">♥ ${x.likes||0}</div></div>`).join('')}${coms}</div></div>`}
+      if(L==='forum')return `<div class="doc web forum">${bar}<div class="hero" style="--wc:hsl(${hue} 35% 32%)"><b>${esc(b.seite||'Forum')} · Forum</b><h3>${esc(b.ueberschrift||b.titel)}</h3></div>
+        <div class="body">${sub}${(b.beitraege||[]).map((x,i)=>`<div class="fpost"><div class="fu"><span class="av" style="background:hsl(${(hue+i*47)%360} 40% 45%)">${esc((x.von||'?')[0])}</span><b>${esc(x.von)}</b><small>${esc(x.zeit)}</small></div>${P(x.t)}</div>`).join('')}</div></div>`;
+      if(L==='suche')return `<div class="doc web suche">${bar}<div class="body"><div class="sq">🔍 <b>${esc(b.seite||'Suche')}</b> · ${esc(b.ueberschrift||'Suchverlauf')}</div>${sub}
+        ${(b.treffer||[]).map(x=>`<div class="hit">${x.suchanfrage?`<div class="hq">${esc(x.zeit)} · „${esc(x.suchanfrage)}“</div>`:''}${x.titel?`<a>${esc(x.titel)}</a>`:''}${x.url?`<cite>${esc(x.url)}</cite>`:''}${x.t?`<p>${esc(x.t)}</p>`:''}</div>`).join('')}</div></div>`;
+      return `<div class="doc web ${esc(L)}">${bar}
       <div class="hero" style="--wc:hsl(${hue} 55% 38%)"><b>${esc(b.seite||b.titel)}${b.art?' · '+esc(b.art):''}</b><h3>${esc(b.ueberschrift||b.titel)}</h3></div>
-      <div class="body"><div class="sub">${esc([TYPNAME.webseite,b.datum].filter(Boolean).join(' · '))}</div>${(b.abschnitte||[]).map(a=>`<div class="sec">${a.titel?`<h4>${esc(a.titel)}</h4>`:''}${P(a.text)}</div>`).join('')}${P(b.text)}
-      ${(b.kommentare||[]).length?`<div class="com">${b.kommentare.map(k=>`<div><b>${esc(k.von)}</b><u>${esc(k.zeit)}</u>${k.sterne?` <span class="stars">${'★'.repeat(k.sterne)}${'☆'.repeat(5-k.sterne)}</span>`:''}<br>${esc(k.t)}</div>`).join('')}</div>`:''}</div></div>`}
+      <div class="body">${sub}${(b.abschnitte||[]).map(a=>`<div class="sec">${a.titel?`<h4>${esc(a.titel)}</h4>`:''}${P(a.text)}</div>`).join('')}${P(b.text)}${coms}</div></div>`}
+    case 'raetsel':{const open=!!b.belohnung&&b.cracked;
+      if(/login|passwort|konto|account/i.test(b.art||'')&&b.url)return `<div class="doc web login">${'<div class="bar"><i></i><i></i><i></i><span class="url">🔒 '+esc(b.url)+'</span></div>'}<div class="body"><div class="lk2">${open?'🔓 Angemeldet':'🔐 Anmeldung erforderlich'}</div>${head}${P(b.text)}
+        ${open?`<div class="lf ok">✔ ${esc(b.antwort||'')}</div>`:`<div class="lf">Benutzer: ••••••<br>${esc(b.frage||'Passwort')}: <span>__________</span></div>${b.hinweis?`<div class="lh">💡 ${esc(b.hinweis)}</div>`:''}`}</div></div>
+        ${open?`<div class="reward">🔓 Nach dem Login:</div>${docHTML(b.belohnung)}`:''}`;
+      return `<div class="doc lock ${open?'open':''}"><div class="lk">${open?'🔓 Geöffnet':'🔒 Verschlossen'} · ${esc(b.art||'Rätsel')}</div>${head}${P(b.text)}
+        ${open?`<div class="lq">✔ ${esc(b.antwort||'')}</div>`:`<div class="lq">⌨️ ${esc(b.frage||'Code eingeben')}</div>${b.hinweis?`<div class="lh">💡 ${esc(b.hinweis)}</div>`:''}`}</div>
+        ${open?`<div class="reward">🔓 Darin gefunden:</div>${docHTML(b.belohnung)}`:''}`}
     case 'zeitung':return `<div class="doc zeitung"><div class="zt">${esc(b.zeitung||'Tageblatt')}</div><div class="sub">${esc(b.datum)}</div><h3>${esc(b.ueberschrift||b.titel)}</h3>${P(b.text)}</div>`;
     case 'liste':return `<div class="doc liste">${head}<table><tr>${(b.spalten||[]).map(c=>`<th>${esc(c)}</th>`).join('')}</tr>${(b.zeilen||[]).map(r=>`<tr>${r.map(c=>`<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</table>${P(b.text)}</div>`;
     case 'bericht':return `<div class="doc bericht"><div class="stamp">VERTRAULICH</div>${head}<div class="kv">${(b.felder||[]).map(f=>`<b>${esc(f.k)}</b><span>${esc(f.v)}</span>`).join('')}</div>${P(b.text)}</div>`;
-    case 'foto':return `<div class="doc foto">${img?`<img src="${img}" alt="">`:`<div class="ph">${b.media==='x'?'📷 Foto nicht verfügbar – siehe Beschreibung der Spurensicherung':'📷 Foto wird geladen …'}</div>`}<div class="cap">${esc(b.titel)}${b.text?' – '+esc(b.text):''}</div>${b.credit&&img?`<div class="cred">${esc(b.credit)}</div>`:''}</div>`;
+    case 'foto':return `<div class="doc foto">${img?`<img src="${img}" alt="">`:`<div class="ph">${b.media==='x'?'📷 Foto nicht verfügbar':'📷 Foto wird geladen …'}</div>`}<div class="cap">${esc(b.titel)}${b.bildtext?' – '+esc(b.bildtext):''}</div>${b.credit&&img?`<div class="cred">${esc(b.credit)}</div>`:''}${b.text?`<div class="vm"><b>📎 Vermerk der Spurensicherung</b>${esc(b.text)}</div>`:''}</div>`;
     case 'audio':return `<div class="doc audio">${head}<div class="wave ${playing?'on':''}">${Array.from({length:40},(_,i)=>`<i style="animation-delay:${(i*37%100)/100}s"></i>`).join('')}</div>
       ${heard?(b.zeilen||[]).map(z=>`<div class="line"><b>${esc(z.s)}:</b> ${esc(z.t)}</div>`).join(''):`<div class="lock">${b.media==='x'?'':'🎧 Abschrift erscheint, sobald die Aufnahme einmal am Fernseher lief.'}</div>`}
       ${b.media==='x'?`<div class="lock" style="color:var(--mute)">(Tonaufnahme nicht verfügbar – hier die Abschrift)</div>`:''}</div>`;
@@ -599,7 +651,7 @@ function docHTML(b,{img='',playing=false,heard=true}={}){
    SPIELSTAND (Fernseher)
    ===================================================================== */
 let K={phase:'lobby',wish:'',min:60,level:'normal',ch:0,unlocked:[],heard:[],hints:{},wrong:{},solved:[],shown:null,scrollAt:0,marks:{},
-  elapsed:0,runAt:0,waiting:false,toast:null,result:null,seenBy:{}};
+  elapsed:0,runAt:0,waiting:false,toast:null,result:null,seenBy:{},cracked:[],rhints:{},rwrong:{}};
 const P=[];                // Spieler {id,name,color,joined,cid}
 let hostId=null;const BOOT=Date.now();
 // Spielleiter weg (Handy aus / Verbindung verloren)? Dann übernimmt der nächste aktive Spieler – nach dem TV-Start erst nach 20 s, damit sich alle wieder verbinden können
@@ -614,6 +666,7 @@ function unlockChapter(k){const ch=C.kapitel[k];if(!ch.ready){K.waiting=true;ret
   ch.beweise.forEach(b=>{if(!K.unlocked.includes(b.id))K.unlocked.push(b.id)});K.ch=k;K.waiting=false;saveProg()}
 function startClock(){if(!K.runAt)K.runAt=now()}
 function score(){let s=100;Object.values(K.hints).forEach(n=>s-=5*n);Object.values(K.wrong).forEach(n=>s-=10*n);
+  s-=5*Object.keys(K.rhints||{}).length;Object.values(K.rwrong||{}).forEach(n=>s-=2*n);
   if(K.result){const r=K.result;if(!r.taeter)return 0;if(!r.motiv)s-=10;if(!r.methode)s-=10;if(!r.beweis)s-=10}return Math.max(0,s)}
 const curTask=()=>C&&C.kapitel[K.ch]&&C.kapitel[K.ch].auftrag;
 function checkAnswer(a,v){const want=a.typ==='person'?a.antwort:String(a.antwort);
@@ -668,13 +721,20 @@ function handle(pid,m){
       K.elapsed=elapsed();K.runAt=0;K.phase='end';K.score=score();saveProg();setTimeout(solAudio,2500);break}
     case 'newGame':if(!isHost||K.phase!=='end')return;discardCase();break;
     // Jeder Mitspieler kann die Spielleitung übernehmen (z. B. wenn das Spielleiter-Handy aus ist)
+    case 'crack':{if(!['play','accuse'].includes(K.phase))return;const b=evById(m.id);
+      if(!b||b.typ!=='raetsel'||!K.unlocked.includes(b.id)||K.cracked.includes(b.id))return;const v=String(m.v||'').slice(0,40);
+      if(checkAnswer({typ:'code',antwort:b.antwort},v)){K.cracked.push(b.id);K.shown=b.id;K.scrollAt=now();toast(`🔓 ${p.name} hat „${b.titel}“ geöffnet!`)}
+      else{K.rwrong[b.id]=(K.rwrong[b.id]||0)+1;toast(`🔒 „${v}“ passt nicht (−2 Punkte)`)}
+      saveProg();break}
+    case 'rhint':{const b=evById(m.id);if(!b||b.typ!=='raetsel'||!K.unlocked.includes(b.id)||K.rhints[b.id]||K.cracked.includes(b.id))return;K.rhints[b.id]=1;saveProg();break}
     case 'claimHost':if(!p.joined||isHost)return;hostId=pid;savePlayers();toast(`👑 ${p.name} ist jetzt Spielleiter`);break;
     case 'getEv':{const b=evById(m.id);if(!b||!K.unlocked.includes(m.id))return;
       tell(pid,{t:'ev',ev:pubEv(b)});if(b.typ==='foto'&&IMG[b.id])sendImg(pid,b.id);return}
     default:return}
   renderTV();pushAll()}
 // Für die Handys: keine Planungsnotizen, Abschrift erst nach dem Abspielen
-function pubEv(b){const o={...b};delete o.plan;delete o.bild;if(b.typ==='audio'&&b.media==='ok'&&!K.heard.includes(b.id))delete o.zeilen;return o}
+function pubEv(b){const o={...b};delete o.plan;delete o.bild;
+  if(b.typ==='raetsel'){o.cracked=(K.cracked||[]).includes(b.id);if(!o.cracked){delete o.belohnung;delete o.antwort}if(!(K.rhints||{})[b.id]||o.cracked)delete o.hinweis}if(b.typ==='audio'&&b.media==='ok'&&!K.heard.includes(b.id))delete o.zeilen;return o}
 async function sendImg(pid,id){
   const src=await DB.get('img:'+id);if(!src)return;const sm=await shrink(src,900,.72);
   const url=await new Promise(ok=>{const r=new FileReader();r.onload=()=>ok(r.result);r.readAsDataURL(sm)});
@@ -697,10 +757,10 @@ async function newCase(){
   Object.assign(K,{phase:'gen',ch:0,unlocked:[],heard:[],hints:{},wrong:{},solved:[],shown:null,marks:{},elapsed:0,runAt:0,waiting:false,result:null,flash:null});
   GEN.steps=[];await saveCase();await saveProg();generate()}
 async function discardCase(){GEN.epoch++;GEN.busy=false;try{GEN.ctl&&GEN.ctl.abort()}catch(e){}stopAudio();await DB.clear();C=null;GEN.steps=[];GEN.err='';GEN.chars=0;
-  Object.assign(K,{phase:'lobby',ch:0,unlocked:[],heard:[],hints:{},wrong:{},solved:[],shown:null,marks:{},elapsed:0,runAt:0,waiting:false,result:null,flash:null});renderTV();pushAll()}
+  Object.assign(K,{phase:'lobby',ch:0,unlocked:[],heard:[],hints:{},wrong:{},solved:[],shown:null,marks:{},elapsed:0,runAt:0,waiting:false,result:null,flash:null,cracked:[],rhints:{},rwrong:{}});renderTV();pushAll()}
 async function resume(){
   const c=await DB.get('case'),pr=await DB.get('prog');if(!c)return;C=c;
-  if(pr)Object.assign(K,pr,{runAt:0,toast:null,flash:null});
+  if(pr)Object.assign(K,{cracked:[],rhints:{},rwrong:{}},pr,{runAt:0,toast:null,flash:null});
   for(const ch of C.kapitel||[])for(const b of ch.beweise||[]){
     if(b.typ==='foto'&&b.media==='ok'){const bl=await DB.get('img:'+b.id);if(bl)IMG[b.id]=URL.createObjectURL(bl);else b.media=null}
     if(b.typ==='audio'&&b.media==='ok'&&!(await DB.get('aud:'+b.id)))b.media=null}
@@ -743,9 +803,9 @@ function renderTV(){
   else if(K.phase==='play'||K.phase==='accuse'){
     const list=C.kapitel.map((c,k)=>{if(k>K.ch&&!c.beweise.some(b=>K.unlocked.includes(b.id)))return '';
       const vis=c.beweise.filter(b=>K.unlocked.includes(b.id)&&(k>=K.ch||b.id===K.shown||PLAYING===b.id));
-      return `<div class="chsep">Kapitel ${k+1} · ${esc(c.titel)}${k<K.ch?` · ${c.beweise.length} Beweise`:''}</div>`+vis.map(b=>`<div class="ev ${K.shown===b.id?'cur':''}"><span class="ic">${ICON[b.typ]}</span><div>${esc(b.titel)}<small>${esc(TYPNAME[b.typ])}${b.typ==='audio'&&!K.heard.includes(b.id)?' · noch nicht gehört':''}</small></div></div>`).join('')}).join('');
+      return `<div class="chsep">Kapitel ${k+1} · ${esc(c.titel)}${k<K.ch?` · ${c.beweise.length} Beweise`:''}</div>`+vis.map(b=>`<div class="ev ${K.shown===b.id?'cur':''}"><span class="ic">${b.typ==='raetsel'&&(K.cracked||[]).includes(b.id)?'🔓':ICON[b.typ]}</span><div>${esc(b.titel)}<small>${esc(TYPNAME[b.typ])}${b.typ==='audio'&&!K.heard.includes(b.id)?' · noch nicht gehört':''}</small></div></div>`).join('')}).join('');
     const b=K.shown&&evById(K.shown);
-    const viewer=b?`<div class="vscroll" id="vscroll">${docHTML(b,{img:IMG[b.id],playing:PLAYING===b.id,heard:K.heard.includes(b.id)||b.media!=='ok'})}</div>`
+    const viewer=b?`<div class="vscroll" id="vscroll">${docHTML(b.typ==='raetsel'?pubEv(b):b,{img:IMG[b.id],playing:PLAYING===b.id,heard:K.heard.includes(b.id)||b.media!=='ok'})}</div>`
       :`<div class="empty"><div class="big">🔎</div>Öffnet am Handy einen Beweis und tippt „Am TV zeigen“.<br><span style="font-size:24px">Tonaufnahmen laufen hier über den Fernseher.</span></div>`;
     const a=curTask(),nh=K.hints[K.ch]||0;
     const task=K.phase==='accuse'?`<div class="task"><div class="lbl">Anklage</div><div class="q">Wer war es, warum und wie? Erhebt am Handy Anklage – mit dem entscheidenden Beweis.</div></div>`
@@ -782,7 +842,7 @@ function pubState(pid){
     playing:PLAYING,shown:K.shown,waiting:K.waiting,elapsed:elapsed(),run:!!K.runAt,flash:K.flash?{ok:K.flash.ok,by:K.flash.by,t:K.flash.t,next:K.flash.next,v:K.flash.v}:null};
   if(plan){s.case={titel:C.titel,ort:C.ort,datum:C.datum,einleitung:C.einleitung,ermittler:C.ermittler.name,opfer:C.opfer,nk:C.kapitel.length,
       personen:C.personen.map(p=>({id:p.id,name:p.name,alter:p.alter,rolle:p.rolle,beschreibung:p.beschreibung,verdaechtig:p.verdaechtig}))};
-    s.evs=C.kapitel.flatMap((c,k)=>c.beweise.filter(b=>K.unlocked.includes(b.id)).map(b=>({id:b.id,typ:b.typ,titel:b.titel,ch:k,heard:K.heard.includes(b.id)})));
+    s.evs=C.kapitel.flatMap((c,k)=>c.beweise.filter(b=>K.unlocked.includes(b.id)).map(b=>({id:b.id,typ:b.typ,titel:b.titel,ch:k,heard:K.heard.includes(b.id),cracked:(K.cracked||[]).includes(b.id),rh:!!(K.rhints||{})[b.id]})));
     s.chTitles=C.kapitel.map(c=>c.titel);s.marks=K.marks;
     const a=curTask();if(a&&K.phase==='play')s.task={frage:a.frage,typ:a.typ,optionen:a.typ==='auswahl'?a.optionen:null,hints:a.hinweise.slice(0,K.hints[K.ch]||0),more:(K.hints[K.ch]||0)<a.hinweise.length};
     if(K.phase==='accuse'||K.phase==='end')s.anklage={motive:C.anklage.motive,methoden:C.anklage.methoden};
@@ -838,7 +898,8 @@ function dial(){const peer=NET.peer;if(!peer||!peer.open)return;NET.dialAt=now()
   conn.on('data',d=>{if(!d||NET.conn!==conn)return;
     if(d.t==='welcome'){ME=d.pid;$('#net').classList.add('hide');if(ph.name&&ST===null)setTimeout(()=>{if(ST&&!ST.players.some(p=>p.id===ME))send({type:'join',name:ph.name})},300)}
     else if(d.t==='full')netMsg('<div style="font-size:50px">🚪</div><div>Der Raum ist voll (höchstens 6).</div>');
-    else if(d.t==='state'){const first=!ST;ST=d.s;if(ST.evs)ST.evs.forEach(e=>{if(EVC[e.id]&&e.typ==='audio'&&e.heard&&!EVC[e.id].zeilen)delete EVC[e.id]});
+    else if(d.t==='state'){const first=!ST;ST=d.s;if(ST.evs)ST.evs.forEach(e=>{if(EVC[e.id]&&e.typ==='audio'&&e.heard&&!EVC[e.id].zeilen)delete EVC[e.id];
+        if(EVC[e.id]&&e.typ==='raetsel'&&((e.cracked&&!EVC[e.id].cracked)||(e.rh&&!e.cracked&&!EVC[e.id].hinweis)))delete EVC[e.id]});
       if(first&&ph.name&&!ST.players.some(p=>p.id===ME))send({type:'join',name:ph.name});renderPhone()}
     else if(d.t==='ev'){EVC[d.ev.id]=d.ev;renderPhone()}
     else if(d.t==='img'){const b=IMGPART[d.id]||(IMGPART[d.id]=[]);b[d.i]=d.d;if(b.filter(Boolean).length===d.n){IMGC[d.id]=b.join('');delete IMGPART[d.id];renderPhone()}}});
@@ -888,9 +949,12 @@ function renderPhone(){
     h=`<div class="pbody reader"><div class="rbar"><button class="btn sec" data-a="close">‹ Akte</button>
       ${meta.typ==='audio'?(s.playing===OPEN?`<button class="btn" data-a="stop">⏹ Stopp</button>`:`<button class="btn" data-a="play" data-v="${OPEN}">▶︎ Am TV abspielen</button>`)
         :onTV?`<button class="btn sec" data-a="up">▲</button><button class="btn sec" data-a="down">▼</button>`:`<button class="btn" data-a="show" data-v="${OPEN}">📺 Am TV zeigen</button>`}</div>
-      ${b?docHTML(b,{img:IMGC[OPEN]||'',playing:s.playing===OPEN,heard:!!b.zeilen}):'<div class="center">Lade …</div>'}</div>`}
+      ${b?docHTML(b,{img:IMGC[OPEN]||'',playing:s.playing===OPEN,heard:!!b.zeilen}):'<div class="center">Lade …</div>'}
+      ${b&&b.typ==='raetsel'&&!b.cracked&&['play','accuse'].includes(s.phase)?`<label class="l">${esc(b.frage||'Code')}</label><input class="in" id="rc" maxlength="30" autocomplete="off" autocapitalize="characters" placeholder="Code, Zahl oder Wort" value="${esc(ph.rc||'')}">
+        <button class="btn" data-a="crack" data-v="${OPEN}">🔓 Öffnen</button><div class="note">Falsche Codes kosten 2 Punkte.</div>
+        ${b.hinweis?'':`<button class="btn sec small" data-a="rhint" data-v="${OPEN}">${ph.confirm==='rhint'?'Wirklich einen Tipp nehmen? (−5)':'💡 Tipp (−5 Punkte)'}</button>`}`:''}</div>`}
   else if(TAB==='akte'){h=`<div class="pbody">${s.waiting?'<div class="note">🔬 Neue Beweise werden noch ausgewertet …</div>':''}${s.chTitles.map((t,k)=>{const l=s.evs.filter(e=>e.ch===k);if(!l.length)return '';
-      return `<label class="l">Kapitel ${k+1} · ${esc(t)}</label><div class="plist">${l.map(e=>`<button class="pitem ${ph.seen.has(e.id)?'':'new'} ${s.shown===e.id?'cur':''}" data-a="open" data-v="${e.id}"><span class="ic">${ICON[e.typ]}</span><span class="tt"><b>${esc(e.titel)}</b><small>${TYPNAME[e.typ]}${s.shown===e.id?' · 📺 am TV':''}${e.typ==='audio'&&!e.heard?' · noch nicht gehört':''}</small></span>›</button>`).join('')}</div>`}).join('')}
+      return `<label class="l">Kapitel ${k+1} · ${esc(t)}</label><div class="plist">${l.map(e=>`<button class="pitem ${ph.seen.has(e.id)?'':'new'} ${s.shown===e.id?'cur':''}" data-a="open" data-v="${e.id}"><span class="ic">${e.typ==='raetsel'&&e.cracked?'🔓':ICON[e.typ]}</span><span class="tt"><b>${esc(e.titel)}</b><small>${e.typ==='raetsel'&&e.cracked?'Geöffnet':TYPNAME[e.typ]}${s.shown===e.id?' · 📺 am TV':''}${e.typ==='audio'&&!e.heard?' · noch nicht gehört':''}</small></span>›</button>`).join('')}</div>`}).join('')}
       <label class="l">Fall</label><div class="doc" style="font-size:14px">${esc(s.case.einleitung)}<p style="margin-top:.8em"><b>Opfer:</b> ${esc(s.case.opfer&&s.case.opfer.name)} – ${esc(s.case.opfer&&s.case.opfer.beschreibung)}</p></div></div>`}
   else if(TAB==='pers'){h=`<div class="pbody"><div class="note" style="margin-top:0">Markiert gemeinsam, wen ihr verdächtigt – das sehen alle am Fernseher.</div>${s.case.personen.map(p=>{const mk=s.marks[p.id];
       return `<div class="susp"><div class="h"><span class="dot" style="background:${p.verdaechtig?'#596178':'#2f4a3d'}">${esc(p.name[0])}</span><div><b>${esc(p.name)}</b><small>${esc([p.rolle,p.alter?p.alter+' J.':''].filter(Boolean).join(' · '))}${p.verdaechtig?'':' · Zeuge'}</small></div></div><p>${esc(p.beschreibung||'')}</p>
@@ -947,8 +1011,10 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b
     case 'accuse':{const sel=$('#bew');if(sel)ph.acc.beweis=sel.value;if(twice('accuse'))send({type:'accuse',...ph.acc});break}
     case 'playSol':send({type:'play',id:'sol'});break;
     case 'newGame':send({type:'newGame'});break
-    case 'claim':if(twice('claim'))send({type:'claimHost'});break}});
-document.addEventListener('input',e=>{if(e.target.id==='wish')ph.wish=e.target.value;if(e.target.id==='code')ph.code=e.target.value});
+    case 'claim':if(twice('claim'))send({type:'claimHost'});break
+    case 'crack':{const c=$('#rc');const val=c?c.value.trim():'';if(!val)return;send({type:'crack',id:v,v:val});ph.rc='';if(c)c.value='';break}
+    case 'rhint':if(twice('rhint'))send({type:'rhint',id:v});break}});
+document.addEventListener('input',e=>{if(e.target.id==='wish')ph.wish=e.target.value;if(e.target.id==='code')ph.code=e.target.value;if(e.target.id==='rc')ph.rc=e.target.value});
 document.addEventListener('change',e=>{if(e.target.id==='bew'){ph.acc.beweis=e.target.value;renderPhone()}});
 document.addEventListener('focusout',e=>{if(MODE==='phone'&&e.target.id==='wish'&&ph.wish!=null&&ST&&ph.wish!==ST.wish)send({type:'wish',v:ph.wish});setTimeout(renderPhone,50)});
 
