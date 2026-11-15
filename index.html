@@ -483,7 +483,7 @@ body.mode-phone .pscreen{border-radius:0;padding-top:env(safe-area-inset-top);pa
    Ohne Parameter: Fernseher (zeigt QR-Code, führt das Spiel) · ?r=CODE oder #CODE: Handy-Controller
    ?demo: Prototyp-Ansicht mit Fernseher und vier simulierten Handys auf einer Seite
    ===================================================================== */
-const APPV='2026-11-15g'; // bei Änderungen am Protokoll zwischen Fernseher und Handy hochzählen
+const APPV='2026-11-15h'; // bei Änderungen am Protokoll zwischen Fernseher und Handy hochzählen
 const QS=new URLSearchParams(location.search);
 let ROOM=(QS.get('r')||(/^#[A-Za-z0-9]{4}$/.test(location.hash)?location.hash.slice(1):'')).toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,4);
 const MODE=typeof Peer==='undefined'||QS.has('demo')?'demo':(QS.has('r')||ROOM?'phone':'tv');
@@ -691,7 +691,7 @@ function next(type,pool){const ai=AI.pool[type];if(aiOn&&ai&&ai.length)return ai
    KI-FRAGEN (Claude über die Artifact-Schnittstelle "sample")
    ===================================================================== */
 let SAMPLE=null,DICT=null,DICT_DENIED=false,aiOn=true;
-const AI={state:{},pool:{},denied:false};
+const AI={state:{},pool:{},denied:false,err:'',ms:{}};
 const THEMES=['Geografie','Tiere','Essen & Trinken','Sport','Musik','Filme & Serien','Geschichte','Wissenschaft','Technik','Natur','Sprache & Wörter','Popkultur','Weltraum','Alltag','Deutschland','Erfindungen','Körper & Gesundheit','Kunst'];
 const SVG_ATTR={path:['d'],circle:['cx','cy','r'],ellipse:['cx','cy','rx','ry'],line:['x1','y1','x2','y2'],rect:['x','y','width','height','rx','ry'],polyline:['points']};
 function cleanStroke(str){const m=String(str).match(/^\s*<(\w+)\b([^<>]*?)\/?>\s*(<\/\w+>)?\s*$/);if(!m)return null;
@@ -727,15 +727,20 @@ const AI_SPECS={
     fix:x=>({q:x.q.slice(0,60),items:x.items.map(i=>[String(i[0]).slice(0,28),String(i[1]||'').slice(0,20)]),ai:true})}
 };
 /* ---------- Gemini (eigener API-Key, für die Datei außerhalb der Claude-Vorschau) ---------- */
-const GEM={key:'',model:'gemini-flash-latest'};
+const GEM={key:'',model:'gemini-flash-latest',think:false};
 try{GEM.key=localStorage.getItem('cd_gem_key')||'';GEM.model=localStorage.getItem('cd_gem_model')||GEM.model}catch(e){}
 // In der Claude-Vorschau fragt das Spiel Claude (Gemini ist dort blockiert), sonst Gemini, falls ein Key hinterlegt ist
 const aiProvider=()=>SAMPLE?'Claude':(GEM.key?'Gemini':null);
 async function geminiText(prompt,json=true){
   const url=`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(GEM.model)}:generateContent?key=${encodeURIComponent(GEM.key)}`;
-  const body={contents:[{role:'user',parts:[{text:prompt}]}]};if(json)body.generationConfig={responseMimeType:'application/json'};
-  const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  // Ohne langes „Nachdenken“ antwortet Gemini viel schneller; kennt das Modell die Einstellung nicht, geht es ohne weiter
+  const body={contents:[{role:'user',parts:[{text:prompt}]}],generationConfig:{...(json?{responseMimeType:'application/json'}:{}),...(GEM.think?{}:{thinkingConfig:{thinkingBudget:0}})}};
+  const ctl=new AbortController(),tm=setTimeout(()=>ctl.abort(),75000);let res;
+  try{res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:ctl.signal})}
+  catch(e){throw Object.assign(new Error(e&&e.name==='AbortError'?'keine Antwort nach 75 s':'Netzwerkfehler'),{code:'error'})}
+  finally{clearTimeout(tm)}
   const d=await res.json().catch(()=>({}));
+  if(!res.ok&&res.status===400&&!GEM.think&&/think/i.test((d.error&&d.error.message)||'')){GEM.think=true;return geminiText(prompt,json)}
   if(!res.ok){const e=new Error((d.error&&d.error.message)||('HTTP '+res.status));e.code=res.status===429?'rate_limited':(res.status===400||res.status===401||res.status===403)?'bad_key':'error';throw e}
   return ((d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.candidates[0].content.parts)||[]).map(p=>p.text||'').join('')}
 async function askJSON(prompt){
@@ -752,11 +757,14 @@ async function aiGenerate(type){
     const wish=S.aiWish?`\n\nWICHTIG – Wunsch der Spieler für den heutigen Abend: „${S.aiWish}“. Dieser Wunsch hat Vorrang vor allen Themenvorgaben oben: JEDE einzelne Frage bzw. Aufgabe muss dazu passen (Thema, Schwierigkeit und Ton). Halte aber alle übrigen Regeln und das Antwortformat oben genau ein.`:'';
     const themes=S.aiWish?`passend zum Wunsch der Spieler (siehe unten)`:shuffle([...shuffle(MOTTO.t).slice(0,3),...shuffle(THEMES.filter(t=>!MOTTO.t.includes(t))).slice(0,2)]).join(', ');
     const prompt=AI_SPECS[type].prompt(themes)+wish;
-    let res;try{res=await askJSON(prompt)}catch(e){if(e&&e.code==='not_granted')throw e;await new Promise(r=>setTimeout(r,2500));res=await askJSON(prompt)} // ein zweiter Versuch bei Netz-/Limit-Fehlern
+    const t0=now();let res;
+    try{res=await askJSON(prompt)}catch(e){if(e&&(e.code==='not_granted'||e.code==='bad_key'))throw e; // ein zweiter Versuch bei Netz-/Limit-Fehlern
+      await new Promise(r=>setTimeout(r,e&&e.code==='rate_limited'?15000:2500));res=await askJSON(prompt)}
+    AI.ms[type]=now()-t0;
     const sp=AI_SPECS[type],arr=sp.parse?sp.parse(res):Array.isArray(res)?res:(res&&Array.isArray(res.items)?res.items:[]);
     const items=arr.filter(x=>{try{return x&&AI_SPECS[type].check(x)}catch(e){return false}}).map(AI_SPECS[type].fix);
-    if(items.length>=4){AI.pool[type]=shuffle(items);AI.state[type]='ready'}else AI.state[type]='error';
-  }catch(e){AI.state[type]='error';if(e&&e.code==='not_granted'){aiOn=false;AI.denied=true}}
+    if(items.length>=4){AI.pool[type]=shuffle(items);AI.state[type]='ready'}else{AI.state[type]='error';AI.err=`${GAMES[type].name}: Antwort unbrauchbar`}
+  }catch(e){AI.state[type]='error';AI.err=`${GAMES[type].name}: ${String((e&&e.message)||e).slice(0,80)}`;if(e&&e.code==='not_granted'){aiOn=false;AI.denied=true}}
   aiStatus();
 }
 // Key kommt im Fernseher-Modus vom Handy des Gastgebers; gespeichert wird er nur am Fernseher
@@ -775,8 +783,8 @@ function setGemKey(key){
     .catch(e=>{AIMSG={t:(e.code==='bad_key'?'Key ungültig: ':e.code==='rate_limited'?'Limit erreicht: ':'Fehler: ')+String(e.message||'').slice(0,90),ok:false}})
     .finally(()=>{if(GEM.key===key)renderAll()})}
 // Wird direkt aus dem Klick des Gastgebers gestartet (erste Nutzung fragt einmal nach Erlaubnis)
-async function aiPrefetch(reset){if(reset){AI.state={};AI.pool={}}if(!aiOn||!aiProvider())return;await Promise.all([...new Set(S.prog)].filter(t=>AI_SPECS[t]).map(t=>aiGenerate(t)))}
-const aiReady=()=>{const t=[...new Set(S.prog)].filter(x=>AI_SPECS[x]);if(!t.length)return '';const n=t.filter(x=>AI.state[x]==='ready').length,l=t.some(x=>AI.state[x]==='loading');return ` · ${n}/${t.length} Spiele fertig${l?' …':''}`};
+async function aiPrefetch(reset){if(reset){AI.state={};AI.pool={}}if(!aiOn||!aiProvider())return;AI.err='';await Promise.all([...new Set(S.prog)].filter(t=>AI_SPECS[t]).map((t,k)=>new Promise(r=>setTimeout(r,k*1200)).then(()=>aiGenerate(t))))}
+const aiReady=()=>{const t=[...new Set(S.prog)].filter(x=>AI_SPECS[x]);if(!t.length)return '';const n=t.filter(x=>AI.state[x]==='ready').length,l=t.some(x=>AI.state[x]==='loading');const e=t.some(x=>AI.state[x]==='error');return ` · ${n}/${t.length} Spiele fertig${l?' …':''}${e&&AI.err?` · ⚠️ ${esc(AI.err)}`:''}`};
 function aiStatus(){
   const pv=aiProvider(),b=$('#aiBtn');if(b){b.disabled=!pv;b.style.opacity=pv?1:.55;
     b.textContent=!pv?'🤖 KI aus (Gemini-Key fehlt)':AI.denied?'🤖 KI nicht erlaubt':`🤖 KI-Fragen: ${aiOn?'an':'aus'} · ${pv}`}
@@ -1337,17 +1345,17 @@ function handle(pid,m){
       if(pid!==S.hostId||S.phase!=='lobby'||typeof m.key!=='string'||m.key.length>200)return;setGemKey(m.key.trim());break;
     case 'setLen':
       if(S.phase!=='lobby'||pid!==S.hostId||![4,6,9,13].includes(m.n))return;
-      S.len=m.n;S.prog=makeProg(m.n,S.salt);sfx('tick');renderAll();break;
+      S.len=m.n;S.prog=makeProg(m.n,S.salt);sfx('tick');renderAll();if(MODE==='tv')aiPrefetch();break;
     case 'reroll':
       if(S.phase!=='lobby'||pid!==S.hostId)return;
-      S.salt++;S.prog=makeProg(S.len||S.prog.length,S.salt);sfx('whoosh');renderAll();break;
+      S.salt++;S.prog=makeProg(S.len||S.prog.length,S.salt);sfx('whoosh');renderAll();if(MODE==='tv')aiPrefetch();break;
     case 'toggleGame':
       if(S.phase!=='lobby'||pid!==S.hostId||!GAMES[m.t])return;
       {const k=S.prog.indexOf(m.t);
         if(k>=0){if(S.prog.length<=1)return;S.prog.splice(k,1)} // mindestens ein Spiel bleibt an
         else S.prog.push(m.t);
         S.len=0}
-      sfx('tick');renderAll();break;
+      sfx('tick');renderAll();if(MODE==='tv')aiPrefetch();break;
     case 'endGame': // Gastgeber beendet den Abend sofort → Endstand
       if(pid!==S.hostId||!['intro','play','roundEnd','gameWin','scores'].includes(S.phase))return;
       stopListening();stopMusic();finish();break;
@@ -1964,6 +1972,7 @@ if(MODE!=='phone')jsonp('https://api.deezer.com/chart/0/tracks?limit=1',6000).th
   renderAll();aiStatus();
   if(MODE==='tv'){
     hostNet();setInterval(hostWatch,4000);
+    setTimeout(()=>{if(S.phase==='lobby')aiPrefetch()},2000); // KI-Fragen schon in der Lobby schreiben lassen
     document.addEventListener('pointerdown',unlockAudio);
     unlockAudio();if(AC&&AC.state==='suspended')$('#tvnote').hidden=false}
   if(MODE==='phone')phoneNet();
