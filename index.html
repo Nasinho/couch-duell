@@ -729,6 +729,19 @@ async function aiGenerate(type){
   }catch(e){AI.state[type]='error';if(e&&e.code==='not_granted'){aiOn=false;AI.denied=true}}
   aiStatus();
 }
+// Key kommt im Fernseher-Modus vom Handy des Gastgebers; gespeichert wird er nur am Fernseher
+let AIMSG={t:'',ok:null},AIREMOTE=null;
+const aiLocal=()=>({pv:aiProvider(),on:aiOn,denied:AI.denied,has:!!GEM.key,msg:AIMSG.t,ok:AIMSG.ok});
+const aiInfo=()=>MODE==='phone'?(AIREMOTE||{pv:null,on:false,denied:false,has:false,msg:'',ok:null}):aiLocal();
+function setGemKey(key){
+  GEM.key=key;try{key?localStorage.setItem('cd_gem_key',key):localStorage.removeItem('cd_gem_key')}catch(e){}
+  AI.state={};AI.pool={};AI.denied=false;aiOn=true;aiStatus();
+  if(!key){AIMSG={t:'Key gelöscht – es gibt die eingebauten Fragen.',ok:null};renderAll();return}
+  AIMSG={t:'Teste die Verbindung …',ok:null};renderAll();
+  geminiText('Antworte ausschließlich mit diesem JSON: {"ok":true}')
+    .then(t=>{AIMSG=/ok/.test(t)?{t:`Verbindung klappt ✓ (${GEM.model})`,ok:true}:{t:'Antwort kam, aber unerwartet.',ok:false}})
+    .catch(e=>{AIMSG={t:(e.code==='bad_key'?'Key ungültig: ':e.code==='rate_limited'?'Limit erreicht: ':'Fehler: ')+String(e.message||'').slice(0,90),ok:false}})
+    .finally(()=>{if(GEM.key===key)renderAll()})}
 // Wird direkt aus dem Klick des Gastgebers gestartet (erste Nutzung fragt einmal nach Erlaubnis)
 async function aiPrefetch(){AI.state={};AI.pool={};for(const t of [...S.prog])if(AI_SPECS[t]&&aiOn)await aiGenerate(t)}
 function aiStatus(){
@@ -1087,7 +1100,7 @@ const peerId=code=>'couchduell-'+code.toLowerCase();
 function snapshot(){
   let cur=null;
   if(S.cur){cur={...S.cur,r:null};if(S.cur.r){cur.r={...S.cur.r};delete cur.r.clip;delete cur.r.full}}
-  return{S:{...S,cur},PLAY,P:P.map(p=>({id:p.id,joined:p.joined,name:p.name,color:p.color,hat:p.hat,score:p.score,prevScore:p.prevScore}))}}
+  return{S:{...S,cur},PLAY,AI:aiLocal(),P:P.map(p=>({id:p.id,joined:p.joined,name:p.name,color:p.color,hat:p.hat,score:p.score,prevScore:p.prevScore}))}}
 function tell(i,o){const c=NET.conns[i];if(c&&c.open){try{c.send(o)}catch(e){}}}
 const pushState=i=>tell(i,{t:'state',s:snapshot()});
 
@@ -1165,7 +1178,7 @@ function dial(){
 // Spielstand vom Fernseher übernehmen; eigene Entwürfe (Name, Tipp, Pin …) bleiben lokal
 function applyState(s){
   const oldRid=S.rid,me=P[ME];
-  Object.assign(S,s.S);PLAY=s.PLAY;
+  Object.assign(S,s.S);PLAY=s.PLAY;AIREMOTE=s.AI||null;
   s.P.forEach(q=>{const p=P[q.id];
     if(q.id!==ME)Object.assign(p,q);
     else{p.joined=q.joined;p.score=q.score;p.prevScore=q.prevScore;if(q.joined){p.name=q.name;p.color=q.color;p.hat=q.hat}}});
@@ -1187,7 +1200,11 @@ function handle(pid,m){
       if(S.hostId===null)S.hostId=pid;
       sfx('join');renderAll();break;
     case 'start':
-      if(S.phase==='lobby'&&pid===S.hostId&&joined().length>=2){PLAY=[...S.prog];if(!PLAY.length)return;S.recorded=false;sfx('start');startGame(0)}break;
+      if(S.phase==='lobby'&&pid===S.hostId&&joined().length>=2){PLAY=[...S.prog];if(!PLAY.length)return;S.recorded=false;if(MODE==='tv'&&aiOn&&aiProvider())aiPrefetch();sfx('start');startGame(0)}break;
+    case 'aiToggle':
+      if(pid!==S.hostId||S.phase!=='lobby'||!aiProvider()||AI.denied)return;aiOn=!aiOn;aiStatus();renderAll();break;
+    case 'gemSet':
+      if(pid!==S.hostId||S.phase!=='lobby'||typeof m.key!=='string'||m.key.length>200)return;setGemKey(m.key.trim());break;
     case 'setLen':
       if(S.phase!=='lobby'||pid!==S.hostId||![4,6,9,13].includes(m.n))return;
       S.len=m.n;S.prog=makeProg(m.n,S.salt);sfx('tick');renderAll();break;
@@ -1289,7 +1306,7 @@ function handle(pid,m){
 
     case 'restart':
       if(pid!==S.hostId||S.phase!=='final')return;
-      P.forEach(q=>{q.score=0;q.prevScore=0});S.recorded=false;sfx('start');startGame(0);break;
+      P.forEach(q=>{q.score=0;q.prevScore=0});S.recorded=false;if(MODE==='tv'&&aiOn&&aiProvider())aiPrefetch();sfx('start');startGame(0);break;
   }
 }
 function wrongAnswer(pid,text){
@@ -1549,10 +1566,19 @@ function phoneBody(i){
   const host=i===S.hostId;
   switch(S.phase){
     case 'lobby':{const n=joined().length;
+      if(host&&p.gemOpen){const ai=aiInfo();
+        const st=ai.denied?'KI ist nicht erlaubt.':!ai.pv?'Noch kein Key – es gibt die eingebauten Fragen.':`KI-Fragen sind <b>${ai.on?'an':'aus'}</b> · ${esc(ai.pv)}`;
+        return `<div class="pc-center" style="gap:2.4cqw"><div class="ptxt" style="font-size:6.4cqw"><b>🤖 KI-Fragen</b></div>
+        <div class="psmall">Mit einem Gemini-API-Key (kostenlos bei Google AI Studio) schreibt die KI jeden Abend neue Fragen zum Motto. Der Key wird nur am Fernseher gespeichert.</div>
+        <div class="psmall">${st}</div>${ai.msg?`<div class="psmall" style="color:${ai.ok===true?'#1f7a5a':ai.ok===false?'#e8590c':'inherit'}">${esc(ai.msg)}</div>`:''}
+        <input class="pinput" style="font-size:max(16px,4.6cqw)" data-in="gem" data-p="${i}" type="password" maxlength="200" placeholder="${ai.has?'Neuen Key eintragen':'API-Key (AIza…)'}" value="${esc(p.draftGem||'')}" autocomplete="off" autocapitalize="off" spellcheck="false">
+        <button class="pbtn" data-act="gemSend" data-p="${i}">Speichern &amp; testen</button>
+        <div class="lenrow" style="grid-template-columns:1fr 1fr">${ai.pv&&!ai.denied?`<button class="lenbtn" data-act="aiToggle" data-p="${i}">${ai.on?'KI aus':'KI an'}</button>`:''}${ai.has?`<button class="lenbtn" data-act="gemDel" data-p="${i}">Key löschen</button>`:''}</div>
+        <button class="pbtn ghost small" style="font-size:5cqw" data-act="gemBack" data-p="${i}">‹ Zurück</button></div>`}
       if(host)return `<div class="pc-center" style="gap:2.4cqw"><div class="ptxt" style="font-size:6.4cqw"><b>Abendprogramm 👑</b></div>
         <div class="lenrow">${[[4,'Kurz'],[6,'Normal'],[9,'Lang'],[13,'Alle']].map(([k,l])=>`<button class="lenbtn ${S.len===k?'sel':''}" data-act="setLen" data-v="${k}" data-p="${i}">${l}</button>`).join('')}</div>
         <div class="gchips">${ORDER.map(t=>{const k=S.prog.indexOf(t);return `<button class="gchip ${k<0?'off':''}" data-act="toggleGame" data-v="${t}" data-p="${i}" title="${GAMES[t].name}" aria-label="${GAMES[t].name}"><span>${GAMES[t].icon}</span>${k>=0?`<b>${k+1}</b>`:''}</button>`}).join('')}</div>
-        <button class="pbtn ghost small" style="font-size:5cqw" data-act="reroll" data-p="${i}">🎲 Neu mischen</button>
+        <div class="lenrow" style="grid-template-columns:1fr 1fr"><button class="lenbtn" data-act="reroll" data-p="${i}">🎲 Neu mischen</button><button class="lenbtn" data-act="gemOpen" data-p="${i}">🤖 KI: ${(a=>a.pv&&a.on&&!a.denied?'an':'aus')(aiInfo())}</button></div>
         <button class="pbtn" data-act="start" data-p="${i}" ${n<2?'disabled':''}>Spiel starten</button>${n<2?'<div class="psmall">Warte auf mind. 1 weiteren Spieler</div>':''}</div>`;
       return `<div class="pc-center">${avatar(p,{cls:'idle wave'})}<div class="ptxt"><b>Du bist dabei!</b></div>${host
         ?`<div class="psmall">Du bist Gastgeber 👑</div><button class="pbtn" data-act="start" data-p="${i}" ${n<2?'disabled':''}>Spiel starten</button>${n<2?'<div class="psmall">Warte auf mind. 1 weiteren Spieler</div>':''}`
@@ -1629,6 +1655,7 @@ function renderAll(){renderTV();P.forEach((_,i)=>renderPhone(i));$('#target').di
 function joinFrom(i){const p=P[i];send(i,{type:'join',name:p.draftName,color:p.color,hat:p.hat})}
 function shakeInput(i,key){const inp=document.querySelector(`#ps${i} [data-in="${key}"]`);if(inp){inp.classList.remove('err');void inp.offsetWidth;inp.classList.add('err')}}
 function submitGuess(i){const p=P[i],v=parseFloat(String(p.draftGuess).replace(',','.'));if(isNaN(v))return shakeInput(i,'guess');p.draftGuess='';send(i,{type:'guess',v,t:now()})}
+function submitGem(i){const p=P[i],k=String(p.draftGem||'').trim();if(!k)return shakeInput(i,'gem');p.draftGem='';send(i,{type:'gemSet',key:k})}
 function submitSay(i){const p=P[i],t=p.draftSay.trim();if(!t)return shakeInput(i,'say');p.draftSay='';stopListening();send(i,{type:'say',text:t})}
 function hit(btn){btn.classList.add('hit');setTimeout(()=>btn.classList.remove('hit'),120)}
 document.addEventListener('click',e=>{
@@ -1654,7 +1681,7 @@ document.addEventListener('click',e=>{
       .catch(e=>say((e.code==='bad_key'?'Key oder Modellname ungültig: ':e.code==='rate_limited'?'Limit erreicht: ':(SAMPLE?'In der Claude-Vorschau blockiert – bitte in der Datei testen. ':'Fehler: '))+e.message.slice(0,120),'#e8590c'));
     return}
   if(a==='ai'){if(!aiProvider()||AI.denied)return;aiOn=!aiOn;aiStatus();return}
-  if((a==='start'||a==='restart')&&+b.dataset.p===S.hostId&&aiOn&&aiProvider()&&(a==='restart'||joined().length>=2))aiPrefetch();
+  if(MODE==='demo'&&(a==='start'||a==='restart')&&+b.dataset.p===S.hostId&&aiOn&&aiProvider()&&(a==='restart'||joined().length>=2))aiPrefetch();
   if(a==='resetStore'){ // zweimal tippen zum Bestätigen
     if(b.dataset.arm){STORE={days:[],wins:{},seen:{}};saveStore();delete b.dataset.arm;b.textContent='🏆 Dauerwertung gelöscht';if(S.phase==='lobby')renderTV()}
     else{b.dataset.arm='1';b.textContent='Wirklich löschen?';setTimeout(()=>{if(b.dataset.arm){delete b.dataset.arm;b.textContent='🏆 Dauerwertung löschen'}},3000)}
@@ -1673,6 +1700,10 @@ document.addEventListener('click',e=>{
     case 'sel':{const v=+b.dataset.v;if(p.draftOrder.includes(v)||p.draftOrder.length>=4)return;p.draftOrder.push(v);sfx('tick');renderPhone(i);
       if(p.draftOrder.length===4){const o=[...p.draftOrder];setTimeout(()=>send(i,{type:'order',order:o}),220)}break}
     case 'sreset':p.draftOrder=[];renderPhone(i);break;
+    case 'gemOpen':p.gemOpen=true;renderPhone(i);break;
+    case 'gemBack':p.gemOpen=false;p.draftGem='';renderPhone(i);break;
+    case 'gemSend':submitGem(i);break;
+    case 'gemDel':send(i,{type:'gemSet',key:''});break;
     case 'toggleGame':send(i,{type:'toggleGame',t:b.dataset.v});break;
     case 'setLen':send(i,{type:'setLen',n:+b.dataset.v});break;
     case 'skip':
@@ -1716,7 +1747,7 @@ document.addEventListener('pointerup',e=>{
 });
 document.addEventListener('pointercancel',()=>{swipeStart=null;if(drawing){const i=drawing.i;drawing=null;renderPhone(i)}});
 document.addEventListener('input',e=>{const t=e.target;if(!t.dataset||!t.dataset.in)return;const p=P[+t.dataset.p];
-  ({name:()=>p.draftName=t.value,guess:()=>p.draftGuess=t.value,say:()=>p.draftSay=t.value})[t.dataset.in]();
+  ({name:()=>p.draftName=t.value,guess:()=>p.draftGuess=t.value,say:()=>p.draftSay=t.value,gem:()=>p.draftGem=t.value})[t.dataset.in]();
   if(MODE==='phone'&&ME!=null)lastH=normH(phoneHTML(ME))});
 document.addEventListener('keydown',e=>{
   const t=e.target;
@@ -1724,7 +1755,7 @@ document.addEventListener('keydown',e=>{
   if(MODE==='tv'){unlockAudio();
     if((e.key==='Enter'||e.key===' ')&&S.hostId!=null){e.preventDefault();handle(S.hostId,{type:S.phase==='lobby'?'start':S.phase==='final'?'restart':'next'})}
     return}
-  if(t.dataset&&t.dataset.in&&e.key==='Enter'){unlockAudio();const i=+t.dataset.p;({name:joinFrom,guess:submitGuess,say:submitSay})[t.dataset.in](i);return}
+  if(t.dataset&&t.dataset.in&&e.key==='Enter'){unlockAudio();const i=+t.dataset.p;({name:joinFrom,guess:submitGuess,say:submitSay,gem:submitGem})[t.dataset.in](i);return}
   if(t.tagName==='INPUT'||t.tagName==='SELECT')return;
   if(MODE==='demo'&&['1','2','3','4'].includes(e.key)&&S.phase==='play'){const i=+e.key-1;if(!P[i].joined)return;unlockAudio();
     const btn=document.querySelector(`#ps${i} .bigbtn`);if(btn)hit(btn);
