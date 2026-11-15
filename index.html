@@ -442,7 +442,7 @@ body.mode-phone .pscreen{border-radius:0;padding-top:env(safe-area-inset-top);pa
     <button class="hbtn" id="aiBtn" data-act="ai">🤖 KI-Fragen: an</button>
     <button class="hbtn" data-act="gemPanel">🔑 Gemini</button>
     <button class="hbtn" data-act="demo">⚡ 3 Spieler beitreten</button>
-    <button class="hbtn" data-act="resetStore">🏆 Dauerwertung löschen</button>
+    <button class="hbtn" data-act="resetStore">🗑 Verlauf löschen</button>
     <button class="hbtn" id="mute" data-act="mute">🔊</button>
   </div>
 </header>
@@ -460,7 +460,7 @@ body.mode-phone .pscreen{border-radius:0;padding-top:env(safe-area-inset-top);pa
     <span id="gemMsg"></span>
   </div>
 </div>
-<div class="howto">Tritt mit mindestens zwei Handys bei. Wer zuerst beitritt, ist Gastgeber 👑 und startet. Beim Buzzern wird das Mikro gestartet. Klappt das nicht, kannst du die Antwort einfach tippen. Bei Reaktion, Tipp-Rennen und Stoppuhr gehen am Laptop auch die Tasten 1–4. Jeden Tag gibt es ein neues Abendprogramm mit eigenem Motto. Der Gastgeber wählt die Länge, mischt neu oder tippt einzelne Spiele an und ab. Serie und Dauerwertung werden in diesem Browser gespeichert.</div>
+<div class="howto">Tritt mit mindestens zwei Handys bei. Wer zuerst beitritt, ist Gastgeber 👑 und startet. Beim Buzzern wird das Mikro gestartet. Klappt das nicht, kannst du die Antwort einfach tippen. Bei Reaktion, Tipp-Rennen und Stoppuhr gehen am Laptop auch die Tasten 1–4. Jeden Tag gibt es ein neues Abendprogramm mit eigenem Motto. Der Gastgeber wählt die Länge, mischt neu oder tippt einzelne Spiele an und ab. Die Serie wird in diesem Browser gespeichert.</div>
 
 <div class="app">
   <div>
@@ -483,7 +483,7 @@ body.mode-phone .pscreen{border-radius:0;padding-top:env(safe-area-inset-top);pa
    Ohne Parameter: Fernseher (zeigt QR-Code, führt das Spiel) · ?r=CODE oder #CODE: Handy-Controller
    ?demo: Prototyp-Ansicht mit Fernseher und vier simulierten Handys auf einer Seite
    ===================================================================== */
-const APPV='2026-11-15o'; // bei Änderungen am Protokoll zwischen Fernseher und Handy hochzählen
+const APPV='2026-11-15p'; // bei Änderungen am Protokoll zwischen Fernseher und Handy hochzählen
 const QS=new URLSearchParams(location.search);
 let ROOM=(QS.get('r')||(/^#[A-Za-z0-9]{4}$/.test(location.hash)?location.hash.slice(1):'')).toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,4);
 const MODE=typeof Peer==='undefined'||QS.has('demo')?'demo':(QS.has('r')||ROOM?'phone':'tv');
@@ -718,7 +718,7 @@ const AI_SPECS={
   quiz:{prompt:t=>`Erstelle 12 Quizfragen auf Deutsch für ein lustiges Party-Quiz am Fernseher. Themen-Mix: ${t}. Mittlere Schwierigkeit, nur eindeutig gesicherte Fakten, keine Fragen zu Dingen, die sich oft ändern. Jede Frage hat genau 4 Antwortoptionen mit höchstens 3 Wörtern, die man gut laut aussprechen kann; genau eine ist richtig. Antworte ausschließlich mit einem JSON-Array: [{"q":"Frage?","a":["Option1","Option2","Option3","Option4"],"c":0}] – "c" ist der Index der richtigen Option.`,
     check:x=>typeof x.q==='string'&&Array.isArray(x.a)&&x.a.length===4&&x.a.every(s=>typeof s==='string'&&s.length<=40)&&new Set(x.a).size===4&&Number.isInteger(x.c)&&x.c>=0&&x.c<4,
     fix:x=>{const right=x.a[x.c],a=shuffle(x.a);return{q:x.q.slice(0,140),a,c:a.indexOf(right),ai:true}}},
-  map:{prompt:t=>S.aiWish?`Erstelle ein Karten-Ratespiel („Wo liegt …?“) passend zum Wunsch der Spieler (siehe unten). Wähle die passendste Karte aus dieser Liste: ${Object.entries(MAP_REGIONS).map(([k,r])=>`"${k}" (${r.name})`).join(', ')}. Nenne dann 15 bekannte, gut unterscheidbare Orte, die auf dieser Karte liegen (Städte, Dörfer, Berge, Strände, Seen, Sehenswürdigkeiten …), gut über die Karte verteilt, mit präzisen Koordinaten. Formuliere die Namen so, dass sie in den Satz „Wo liegt …?“ passen (z. B. "Maspalomas", "der Roque Nublo"). Antworte ausschließlich mit JSON in genau dieser Form: {"region":"gc","places":[{"name":"…","lat":27.76,"lon":-15.58}]}. Nur wenn wirklich keine Karte der Liste passt, gib statt des Kürzels eine eigene Region an: {"region":{"name":"…","n":0,"s":0,"w":0,"e":0},"places":[…]} (n/s = nördlichster/südlichster Breitengrad, w/e = westlichster/östlichster Längengrad).`
+  map:{prompt:t=>S.aiWish?`Erstelle ein Karten-Ratespiel („Wo liegt …?“) passend zum Wunsch der Spieler (siehe unten). Wähle die passendste Karte aus dieser Liste: ${Object.entries(MAP_REGIONS).map(([k,r])=>`"${k}" (${r.name})`).join(', ')}. Nenne dann 15 bekannte, gut unterscheidbare Orte, die auf dieser Karte liegen (Städte, Dörfer, Berge, Strände, Seen, Sehenswürdigkeiten …), gut über die Karte verteilt, mit präzisen Koordinaten. Formuliere die Namen so, dass sie in den Satz „Wo liegt …?“ passen (z. B. "Maspalomas", "der Roque Nublo"). Antworte ausschließlich mit JSON in genau dieser Form: {"region":"gc","places":[{"name":"…","lat":27.76,"lon":-15.58}]}. Geht es im Wunsch um eine einzelne Stadt (z. B. „Stuttgart“), nimm KEINE Karte der Liste, sondern die Stadt selbst als eigene Region und nenne Orte innerhalb der Stadt (Stadtteile, Plätze, Parks, Sehenswürdigkeiten, Stadien …). Auch sonst gilt: Nur wenn wirklich keine Karte der Liste passt, gib statt des Kürzels eine eigene Region an: {"region":{"name":"…","n":0,"s":0,"w":0,"e":0},"places":[…]} (n/s = nördlichster/südlichster Breitengrad, w/e = westlichster/östlichster Längengrad).`
     :`Nenne 15 bekannte Orte in Deutschland für ein Karten-Ratespiel: gemischt Großstädte, kleinere bekannte Städte, Berge, Inseln, Seen und Sehenswürdigkeiten, gut über ganz Deutschland verteilt. Gib präzise Koordinaten an. Formuliere den Namen so, dass er in den Satz „Wo liegt …?“ passt (z. B. "Heidelberg", "die Insel Rügen", "der Bodensee"). Antworte ausschließlich mit einem JSON-Array: [{"name":"…","lat":52.52,"lon":13.40}]`,
     // Feste Karte per Kürzel (spart Tokens), notfalls eigene Region; Deutschland = Umriss-Karte
     parse:res=>{let g=res&&!Array.isArray(res)&&res.region;const list=Array.isArray(res)?res:((res&&(res.places||res.items))||[]);
@@ -727,10 +727,15 @@ const AI_SPECS={
       const pts=list.filter(x=>x&&typeof x==='object').map(x=>({...x,name:String(x.name||x.ort||x.place||''),lat:N(x.lat??x.latitude),lon:N(x.lon??x.lng??x.longitude)})).filter(x=>x.name&&num(x.lat)&&num(x.lon));
       if(typeof g==='string')g=MAP_REGIONS[g.trim().toLowerCase()]||Object.values(MAP_REGIONS).find(r=>r.name.toLowerCase()===g.trim().toLowerCase())||null;
       else if(g&&typeof g==='object'&&!g.fixed)g={...g,n:N(g.n??g.north),s:N(g.s??g.south),w:N(g.w??g.west),e:N(g.e??g.east)};
-      if(!g||g.de)return pts.map(x=>({...x,view:null}));
+      // Liegen alle Orte eng beieinander (eine Stadt), gibt es ein Satellitenbild statt der Umriss-Karte
+      const city=l=>{if(l.length<4)return null;const la=l.map(x=>x.lat),lo=l.map(x=>x.lon),n=Math.max(...la),s=Math.min(...la),w=Math.min(...lo),e=Math.max(...lo);
+        if(n-s>.45||e-w>.65)return null;const m=Math.max(.012,(n-s)*.12,(e-w)*.12);const v=mapView({n:n+m,s:s-m,w:w-m,e:e+m});
+        const name=String((g&&typeof g==='object'&&!g.fixed&&!g.de&&g.name)||S.aiWish||'').slice(0,40);return l.map(x=>({...x,view:v,region:name,rk:''}))};
+      if(!g||g.de)return city(pts)||pts.map(x=>({...x,view:null}));
       if(![g.n,g.s,g.w,g.e].every(num)||!(g.n>g.s&&g.e>g.w)||g.n-g.s>150||g.e-g.w>360||Math.abs(g.n)>85||Math.abs(g.s)>85)return [];
       const pad=Math.max(g.n-g.s,g.e-g.w)*(g.fixed?.04:.2),ins=pts.filter(x=>x.lat<=g.n+pad&&x.lat>=g.s-pad&&x.lon>=g.w-pad&&x.lon<=g.e+pad);if(!ins.length)return [];
       const b=g.fixed?g:{n:Math.max(g.n,...ins.map(x=>x.lat)),s:Math.min(g.s,...ins.map(x=>x.lat)),w:Math.min(g.w,...ins.map(x=>x.lon)),e:Math.max(g.e,...ins.map(x=>x.lon))};
+      const c=(!g.fixed||g.n-g.s>2)&&city(ins);if(c)return c; // kleine feste Karten (Gran Canaria) bleiben Umriss
       const view=mapView(b),region=String(g.name||'').slice(0,40),rk=g.fixed?g.k:'';return ins.map(x=>({...x,view,region,rk}))},
     check:x=>typeof x.name==='string'&&(x.view?true:x.lat>47.2&&x.lat<55.1&&x.lon>5.8&&x.lon<15.1),
     fix:x=>{const a=[x.name.slice(0,34),x.lat,x.lon];a.ai=true;a.view=x.view||null;a.region=x.region||'';a.rk=x.rk||'';return a}},
@@ -1666,7 +1671,7 @@ function tvLobby(){
     <div class="gamelist">${S.prog.map((t,k)=>`<span><b>${k+1}</b> ${GAMES[t].icon} ${GAMES[t].name}</span>`).join('')}</div>
     <div class="inforow">${S.prog.includes('music')?`<div class="ailine" style="color:#1f7a5a;background:#e6fbf2">🎵 Hit-Quiz: ${esc(musicName(S.music))}</div>`:''}
     ${aiProvider()&&aiOn?`<div class="ailine">🤖 ${aiProvider()} schreibt neue Fragen ${S.aiWish?'nach eurem Wunsch':'zum Motto'}${aiReady()}${S.aiWish?` · Wunsch: „${esc(S.aiWish.length>40?S.aiWish.slice(0,40)+'…':S.aiWish)}“`:''}</div>`:''}
-    ${hof()?`<div class="ailine" style="color:#a86a00;background:#fff6dc">🏆 Dauerwertung: ${hof()}</div>`:''}</div>
+    </div>
     <div class="hint">${n<2?'Warte auf Spieler … (mindestens 2)':`${esc(host.name)} kann den Abend jetzt starten!${MODE==='tv'?' (oder OK auf der Fernbedienung)':''}`}</div>${NET.status?`<div class="netline">📡 ${NET.status}</div>`:''}</div>`}
 function tvIntro(){const c=S.cur,g=GAMES[c.type];
   return `<div class="intro"><div class="rays"></div><div class="icard">${c.skipped?`<div class="skipnote">⏭ ${esc(c.skipped)} übersprungen</div>`:''}<div class="iround">Spiel ${S.gi+1} von ${PLAY.length}</div><div class="iicon">${g.icon}</div><div class="iname">${g.name}</div><div class="idesc">${g.desc}</div>
@@ -1746,7 +1751,7 @@ function tvScores(){
 function tvFinal(){
   const s=[...joined()].sort((a,b)=>b.score-a.score||a.id-b.id),order=[1,0,2,3].filter(i=>s[i]).map(i=>s[i]),H={1:19,2:14,3:10.5,4:7.5};
   const tie=s[1]&&s[0].score===s[1].score,title=tie?'Unentschieden! 🤝':`🏆 ${esc(s[0].name)} gewinnt!`;
-  return `<div class="final"><div class="rays"></div><div class="ftitle">${title}</div><div class="fsub">${hof()?`🏆 Dauerwertung: ${hof()} · `:''}Morgen wartet ein neues Abendprogramm!</div><div class="podium">${order.map(p=>{const r=Math.min(rankOf(p),4),d=({1:.9,2:.6,3:.3,4:.1})[r];
+  return `<div class="final"><div class="rays"></div><div class="ftitle">${title}</div><div class="fsub">Morgen wartet ein neues Abendprogramm!</div><div class="podium">${order.map(p=>{const r=Math.min(rankOf(p),4),d=({1:.9,2:.6,3:.3,4:.1})[r];
     return `<div class="pcol"><div class="podav" style="animation-delay:${d+.5}s">${avatar(p,{mood:r===1?'joy':'happy',cls:r===1?'jump':'idle'})}</div><div class="ptag" style="animation-delay:${d+.6}s">${esc(p.name)}</div><div class="pblock r${r}" style="height:${H[r]}cqw;animation-delay:${d}s">${r}<small>${ptsTxt(p.score)}</small></div></div>`}).join('')}</div></div>`}
 function renderTV(){if(MODE==='phone')return;bgmUpdate();$('#tv').innerHTML=({lobby:tvLobby,intro:tvIntro,play:tvPlay,roundEnd:tvRoundEnd,gameWin:tvGameWin,scores:tvScores,final:tvFinal})[S.phase]()}
 function animateScores(){requestAnimationFrame(()=>requestAnimationFrame(()=>{
@@ -1940,8 +1945,8 @@ document.addEventListener('click',e=>{
   if(a==='ai'){if(!aiProvider()||AI.denied)return;aiOn=!aiOn;aiStatus();return}
   if(MODE==='demo'&&(a==='start'||a==='restart')&&+b.dataset.p===S.hostId&&aiOn&&aiProvider()&&(a==='restart'||joined().length>=2))aiPrefetch(a==='restart');
   if(a==='resetStore'){ // zweimal tippen zum Bestätigen
-    if(b.dataset.arm){STORE={days:[],wins:{},seen:{}};saveStore();delete b.dataset.arm;b.textContent='🏆 Dauerwertung gelöscht';if(S.phase==='lobby')renderTV()}
-    else{b.dataset.arm='1';b.textContent='Wirklich löschen?';setTimeout(()=>{if(b.dataset.arm){delete b.dataset.arm;b.textContent='🏆 Dauerwertung löschen'}},3000)}
+    if(b.dataset.arm){STORE={days:[],wins:{},seen:{}};saveStore();delete b.dataset.arm;b.textContent='🗑 Verlauf gelöscht';if(S.phase==='lobby')renderTV()}
+    else{b.dataset.arm='1';b.textContent='Wirklich löschen?';setTimeout(()=>{if(b.dataset.arm){delete b.dataset.arm;b.textContent='🗑 Verlauf löschen'}},3000)}
     return}
   if(a==='demo'){if(S.phase!=='lobby')return;['Alex','Sam','Kim'].forEach((n,k)=>{const p=P[k];if(!p.joined){p.draftName=n;setTimeout(()=>joinFrom(k),k*350)}});return}
   if(['press','buzz','tap','stopw','pad'].includes(a))return; // laufen über pointerdown (schneller)
