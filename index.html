@@ -431,11 +431,11 @@ body.mode-phone .pscreen{border-radius:0;padding-top:env(safe-area-inset-top);pa
       <select id="music">
         <option value="melodien">Eingebaute Melodien</option>
         <option value="evergreens" data-dz disabled>Deezer: Größte Hits aller Zeiten</option>
-        <option value="Top Germany" data-dz disabled>Deezer: Top Germany</option>
+        <option value="pl:1111143121" data-dz disabled>Deezer: Top Germany</option>
         <option value="charts" data-dz disabled>Deezer: Charts weltweit</option>
-        <option value="90er Hits" data-dz disabled>Deezer: 90er Hits</option>
-        <option value="2000er Hits" data-dz disabled>Deezer: 2000er Hits</option>
-        <option value="Schlager" data-dz disabled>Deezer: Schlager</option>
+        <option value="pl:3829647662" data-dz disabled>Deezer: 90er Hits</option>
+        <option value="pl:5015220864" data-dz disabled>Deezer: 2000er Hits</option>
+        <option value="pl:8699026122" data-dz disabled>Deezer: Schlager</option>
       </select>
     </label>
     <button class="hbtn" id="aiBtn" data-act="ai">🤖 KI-Fragen: an</button>
@@ -482,7 +482,7 @@ body.mode-phone .pscreen{border-radius:0;padding-top:env(safe-area-inset-top);pa
    Ohne Parameter: Fernseher (zeigt QR-Code, führt das Spiel) · ?r=CODE oder #CODE: Handy-Controller
    ?demo: Prototyp-Ansicht mit Fernseher und vier simulierten Handys auf einer Seite
    ===================================================================== */
-const APPV='2026-11-15d'; // bei Änderungen am Protokoll zwischen Fernseher und Handy hochzählen
+const APPV='2026-11-15e'; // bei Änderungen am Protokoll zwischen Fernseher und Handy hochzählen
 const QS=new URLSearchParams(location.search);
 let ROOM=(QS.get('r')||(/^#[A-Za-z0-9]{4}$/.test(location.hash)?location.hash.slice(1):'')).toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,4);
 const MODE=typeof Peer==='undefined'||QS.has('demo')?'demo':(QS.has('r')||ROOM?'phone':'tv');
@@ -659,6 +659,7 @@ const P=[0,1,2,3].map(i=>({id:i,joined:false,name:'',draftName:'',color:COLORS[[
   score:0,prevScore:0,popAt:0,shakeAt:0,draftGuess:'',draftSay:'',draftPin:null,draftOrder:[],heard:'',micErr:'',listening:false}));
 const S={phase:'lobby',gi:-1,cur:null,hostId:null,decided:false,rem:0,rid:0,target:3,len:6,salt:0,prog:makeProg(6,0),recorded:false,music:'melodien',aiWish:''};
 try{S.aiWish=localStorage.getItem('cd_ai_wish')||'';S.musicSaved=localStorage.getItem('cd_music')||''}catch(e){}
+if(({'Top Germany':1,'90er Hits':1,'2000er Hits':1,'Schlager':1})[S.musicSaved])S.musicSaved={'Top Germany':'pl:1111143121','90er Hits':'pl:3829647662','2000er Hits':'pl:5015220864','Schlager':'pl:8699026122'}[S.musicSaved];
 const queues={};
 // Gedächtnis über mehrere Abende (nur in diesem Browser): gespielte Tage, Siege, schon gestellte Fragen
 let STORE={days:[],wins:{},seen:{}};
@@ -737,7 +738,7 @@ async function aiGenerate(type){
 }
 // Key kommt im Fernseher-Modus vom Handy des Gastgebers; gespeichert wird er nur am Fernseher
 let AIMSG={t:'',ok:null},AIREMOTE=null,MUREMOTE=null;
-const muLocal=()=>({ok:DZ.ok,title:DZ.title,msg:MUMSG.t,mok:MUMSG.ok});
+const muLocal=()=>({ok:DZ.ok,title:DZ.title,msg:MUMSG.t,mok:MUMSG.ok,bgm:BGM.on});
 const muInfo=()=>MODE==='phone'?(MUREMOTE||{ok:null,title:'',msg:'',mok:null}):muLocal();
 const aiLocal=()=>({pv:aiProvider(),on:aiOn,denied:AI.denied,has:!!GEM.key,msg:AIMSG.t,ok:AIMSG.ok});
 const aiInfo=()=>MODE==='phone'?(AIREMOTE||{pv:null,on:false,denied:false,has:false,msg:'',ok:null}):aiLocal();
@@ -826,7 +827,7 @@ const checkSyn=(texts,syn)=>texts.some(t=>{const tt=toks(t);return tt.length&&sy
    SOUND
    ===================================================================== */
 let AC=null,muted=false,musicSrc=null;
-function unlockAudio(){try{if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume().then(()=>{const n=$('#tvnote');if(n)n.hidden=true}).catch(()=>{})}catch(e){}}
+function unlockAudio(){try{if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume().then(()=>{const n=$('#tvnote');if(n)n.hidden=true;bgmUpdate()}).catch(()=>{});else if(!BGM.out)bgmUpdate()}catch(e){}}
 function tone(f,d,type='sine',v=.14,delay=0,slide=0){if(!AC||muted)return;try{const t=AC.currentTime+delay,o=AC.createOscillator(),g=AC.createGain();
   o.type=type;o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+d);
   g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(v,t+.012);g.gain.exponentialRampToValueAtTime(.0001,t+d);
@@ -845,6 +846,52 @@ const SFX={
   fanfare:()=>[[523,0],[659,.12],[784,.24],[1047,.36],[784,.54],[1047,.68]].forEach(([f,d])=>tone(f,.24,'triangle',.13,d))
 };
 const sfx=n=>SFX[n]&&SFX[n]();
+
+/* ---------- Hintergrundmusik: eigene Schleife, live erzeugt (nur Fernseher/Demo) ---------- */
+const BGM={on:true,timer:null,out:null,next:0,step:0,mood:'',noise:null,off:0};
+try{BGM.on=localStorage.getItem('cd_bgm')!=='0'}catch(e){}
+const BGM_MOODS={ // Akkorde je Takt: [Bass-Grundton, Akkordtöne] als MIDI-Nummern
+  chill:{bpm:94,vol:.55,chords:[[48,[60,64,67]],[45,[57,60,64]],[41,[57,60,65]],[43,[59,62,67]]]},
+  play:{bpm:116,vol:.36,chords:[[45,[57,60,64]],[41,[57,60,65]],[48,[60,64,67]],[43,[59,62,67]]]}};
+const mf=n=>440*Math.pow(2,(n-69)/12);
+function bgmNote(f,t,d,type,v,slide){const o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.setValueAtTime(f,t);
+  if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+d);
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(v,t+.012);g.gain.exponentialRampToValueAtTime(.0001,t+d);
+  o.connect(g).connect(BGM.out);o.start(t);o.stop(t+d+.05)}
+function bgmHat(t,v){if(!BGM.noise){const b=AC.createBuffer(1,AC.sampleRate*.1,AC.sampleRate),d=b.getChannelData(0);for(let k=0;k<d.length;k++)d[k]=Math.random()*2-1;BGM.noise=b}
+  const s=AC.createBufferSource(),f=AC.createBiquadFilter(),g=AC.createGain();s.buffer=BGM.noise;f.type='highpass';f.frequency.value=7000;
+  g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.0001,t+.05);s.connect(f).connect(g).connect(BGM.out);s.start(t);s.stop(t+.06)}
+function bgmStep(m,st,t,sp){
+  const s=st%16,bar=Math.floor(st/16),[root,ch]=m.chords[bar%4],phrase=Math.floor(bar/4);
+  if(BGM.mood==='chill'){
+    if(s===0||s===8)bgmNote(mf(root),t,sp*7,'triangle',.11);
+    if(s===0)ch.forEach(n=>bgmNote(mf(n),t,sp*15,'sine',.022));
+    if(s%2===0)bgmNote(mf(ch[[0,1,2,1,0,2,1,2][s/2]]+12*(phrase%2?2:1)),t,sp*1.6,'triangle',.032);
+    if(s%4===2)bgmHat(t,.018);
+    if(phrase%2===1&&[0,6,10].includes(s)){const k=(bar*7+s*3)%3;bgmNote(mf(ch[k]+24),t,sp*3.5,'sine',.03)} // kleine Melodie in jeder zweiten Phrase
+  }else{
+    if(s%2===0)bgmNote(mf(root+(s%4===2?12:0)),t,sp*1.5,'triangle',.09);
+    if(s===0||s===8)bgmNote(150,t,.16,'sine',.13,45);
+    bgmHat(t,s%4===2?.022:.009);
+    if(s%2===1)bgmNote(mf(ch[(s>>1)%3]+12),t,sp*.9,'triangle',.022);
+    if(phrase%2===1&&s===12)bgmNote(mf(ch[2]+24),t,sp*3,'sine',.025);
+  }}
+function bgmTick(){if(!AC||!BGM.out||AC.state!=='running')return;const m=BGM_MOODS[BGM.mood];if(!m)return;const sp=60/m.bpm/4;
+  if(BGM.next<AC.currentTime)BGM.next=AC.currentTime+.06;
+  while(BGM.next<AC.currentTime+.3){try{bgmStep(m,BGM.step,BGM.next,sp)}catch(e){}BGM.next+=sp;BGM.step++}}
+function bgmWanted(){
+  if(MODE==='phone'||!BGM.on||muted)return null;const c=S.cur;
+  if(c&&c.type==='music'&&(S.phase==='play'||S.phase==='roundEnd'))return null; // beim Hit-Quiz läuft die echte Musik
+  return S.phase==='play'?'play':'chill'}
+function bgmUpdate(){
+  if(MODE==='phone'||!AC)return;
+  const want=bgmWanted(),r=S.cur&&S.cur.r,duck=S.phase==='play'&&r&&r.state==='answering';
+  if(!BGM.out){BGM.out=AC.createGain();BGM.out.gain.value=.0001;BGM.out.connect(AC.destination)}
+  if(want&&want!==BGM.mood){BGM.mood=want;BGM.step=0}
+  const vol=want?BGM_MOODS[want].vol*(duck?.25:1):.0001;
+  try{BGM.out.gain.cancelScheduledValues(AC.currentTime);BGM.out.gain.setTargetAtTime(vol,AC.currentTime,want?.35:.25)}catch(e){}
+  if(want){BGM.off=0;if(!BGM.timer)BGM.timer=setInterval(bgmTick,90)}
+  else if(BGM.timer&&!BGM.off){BGM.off=setTimeout(()=>{if(!bgmWanted()){clearInterval(BGM.timer);BGM.timer=null;BGM.mood=''}BGM.off=0},1600)}}
 function noteFreq(n){const m=n.match(/^([A-G])(#|b)?(\d)$/);const b={C:0,D:2,E:4,F:5,G:7,A:9,B:11}[m[1]]+(m[2]==='#'?1:m[2]==='b'?-1:0);return 440*Math.pow(2,(12*(+m[3]+1)+b-69)/12)}
 // Melodie offline rendern; bei reverse wird die Audiospur wirklich umgedreht
 async function renderSong(song,reverse){
@@ -866,7 +913,9 @@ function stopMusic(){if(musicSrc){try{musicSrc.stop()}catch(e){}musicSrc=null}}
    In der Claude-Vorschau blockiert die Sicherheitsrichtlinie Deezer → automatisch Melodien.
    ===================================================================== */
 const DZ={ok:null,tracks:[],promise:null,title:''};let MUMSG={t:'',ok:null};
-const MUSIC_PRESETS=[['melodien','Eingebaute Melodien'],['evergreens','Größte Hits aller Zeiten'],['Top Germany','Top Germany'],['charts','Charts weltweit'],['90er Hits','90er Hits'],['2000er Hits','2000er Hits'],['Schlager','Schlager']];
+const MUSIC_PRESETS=[['melodien','Eingebaute Melodien'],['evergreens','Größte Hits aller Zeiten'],['pl:1111143121','Top Germany'],['charts','Charts weltweit'],['pl:3829647662','90er Hits'],['pl:5015220864','2000er Hits'],['pl:8699026122','Schlager']];
+// feste Deezer-Redaktionslisten (eine Suche nach „Top Germany“ liefert im November sonst Weihnachtslieder)
+const MUSIC_OLD={'Top Germany':'pl:1111143121','90er Hits':'pl:3829647662','2000er Hits':'pl:5015220864','Schlager':'pl:8699026122'};
 const musicName=v=>v==='melodien'?'eingebaute Melodien':'Deezer · '+((MUSIC_PRESETS.find(x=>x[0]===v)||[])[1]||DZ.title||(/^pl:/.test(v)?'eigene Playlist':v));
 function jsonp(url,timeout=8000){return new Promise((res,rej)=>{
   const cb='__dz'+Math.random().toString(36).slice(2),s=document.createElement('script');
@@ -1145,7 +1194,7 @@ function hostNet(code){
         if(old&&old!==conn){try{old.close()}catch(e){}}
         tell(pid,{t:'welcome',pid,room:ROOM});pushState(pid)}
       else if(d.t==='msg'&&conn.pid!=null&&NET.conns[conn.pid]===conn&&d.m&&typeof d.m.type==='string'){
-        if('t' in d.m)d.m.t=now(); // Uhren der Handys sind nicht vergleichbar – es zählt die Ankunft am Fernseher
+        if(typeof d.m.t==='number')d.m.t=now(); // Uhren der Handys sind nicht vergleichbar – es zählt die Ankunft am Fernseher
         unlockAudio();handle(conn.pid,d.m);
         if(['setMusic','aiWish','gemSet'].includes(d.m.type))tell(conn.pid,{t:'ack'})}});
     conn.on('close',()=>dropConn(conn));conn.on('error',()=>dropConn(conn))});
@@ -1238,6 +1287,8 @@ function handle(pid,m){
       else if(/^https?:/i.test(v)){MUMSG={t:'Das ist kein Deezer-Playlist-Link.',ok:false};renderAll();return}
       if(v!=='melodien'&&DZ.ok===false){MUMSG={t:'Deezer ist von diesem Fernseher aus nicht erreichbar.',ok:false};renderAll();return}
       setMusic(v);break}
+    case 'bgmToggle':
+      if(pid!==S.hostId)return;BGM.on=!BGM.on;try{localStorage.setItem('cd_bgm',BGM.on?'1':'0')}catch(e){}renderAll();break;
     case 'aiWish':
       if(pid!==S.hostId||S.phase!=='lobby'||typeof m.v!=='string'||m.v.length>300)return;
       S.aiWish=m.v.trim().slice(0,200);try{localStorage.setItem('cd_ai_wish',S.aiWish)}catch(e){}
@@ -1565,7 +1616,7 @@ function tvFinal(){
   const tie=s[1]&&s[0].score===s[1].score,title=tie?'Unentschieden! 🤝':`🏆 ${esc(s[0].name)} gewinnt!`;
   return `<div class="final"><div class="rays"></div><div class="ftitle">${title}</div><div class="fsub">${hof()?`🏆 Dauerwertung: ${hof()} · `:''}Morgen wartet ein neues Abendprogramm!</div><div class="podium">${order.map(p=>{const r=Math.min(rankOf(p),4),d=({1:.9,2:.6,3:.3,4:.1})[r];
     return `<div class="pcol"><div class="podav" style="animation-delay:${d+.5}s">${avatar(p,{mood:r===1?'joy':'happy',cls:r===1?'jump':'idle'})}</div><div class="ptag" style="animation-delay:${d+.6}s">${esc(p.name)}</div><div class="pblock r${r}" style="height:${H[r]}cqw;animation-delay:${d}s">${r}<small>${ptsTxt(p.score)}</small></div></div>`}).join('')}</div></div>`}
-function renderTV(){if(MODE==='phone')return;$('#tv').innerHTML=({lobby:tvLobby,intro:tvIntro,play:tvPlay,roundEnd:tvRoundEnd,gameWin:tvGameWin,scores:tvScores,final:tvFinal})[S.phase]()}
+function renderTV(){if(MODE==='phone')return;bgmUpdate();$('#tv').innerHTML=({lobby:tvLobby,intro:tvIntro,play:tvPlay,roundEnd:tvRoundEnd,gameWin:tvGameWin,scores:tvScores,final:tvFinal})[S.phase]()}
 function animateScores(){requestAnimationFrame(()=>requestAnimationFrame(()=>{
   document.querySelectorAll('.bfill').forEach(b=>b.style.width=b.dataset.w+'%');
   document.querySelectorAll('.bnum').forEach(el=>{const a=+el.dataset.from,b=+el.dataset.to;if(a===b)return;const t0=now()+400;
@@ -1618,6 +1669,9 @@ function phoneBody(i){
         <button class="pbtn" data-act="musSend" data-p="${i}">Playlist laden</button>
         ${note?`<div class="psmall" style="color:${note[1]===true?'#1f7a5a':note[1]===false?'#e8590c':'inherit'}">${note[0]}</div>`:''}
         <div class="psmall">Tippe den Namen einer Deezer-Playlist oder einen Suchbegriff wie „80er Party“ ein – der Fernseher nimmt den besten Treffer. Links von deezer.com/…/playlist/… gehen auch.</div>
+        <div class="ptxt" style="font-size:5cqw;margin-top:2cqw"><b>Hintergrundmusik</b></div>
+        <button class="lenbtn ${mu.bgm!==false?'sel':''}" style="width:100%" data-act="bgmToggle" data-p="${i}">🎶 ${mu.bgm!==false?'An – tippen zum Ausschalten':'Aus – tippen zum Einschalten'}</button>
+        <div class="psmall">Läuft leise in der Lobby und bei allen Spielen außer dem Hit-Quiz.</div>
         <button class="pbtn ghost small" style="font-size:5cqw" data-act="musBack" data-p="${i}">‹ Zurück</button></div>`}
       if(host&&p.gemOpen){const ai=aiInfo(),old=MODE==='phone'&&NET.tvV&&NET.tvV!==APPV,wait=p.gemPending?now()-p.gemPending:-1;
         const st=ai.denied?'KI ist nicht erlaubt.':!ai.pv?'Noch kein Key – es gibt die eingebauten Fragen.':`KI-Fragen sind <b>${ai.on?'an':'aus'}</b> · ${esc(ai.pv)}`;
@@ -1734,7 +1788,7 @@ document.addEventListener('click',e=>{
     const x=Math.max(0,Math.min(605,q.x)),y=Math.max(0,Math.min(800,q.y));P[i].draftPin=unproj(x,y);sfx('tick');renderPhone(i);return}
   const b=e.target.closest('[data-act]');if(!b||b.disabled)return;unlockAudio();
   const a=b.dataset.act;
-  if(a==='mute'){muted=!muted;b.textContent=muted?'🔇':'🔊';if(muted)stopMusic();else if(S.phase==='play'&&S.cur.type==='music'&&S.cur.r.state==='open')playBuf(S.cur.r.clip,true);return}
+  if(a==='mute'){muted=!muted;b.textContent=muted?'🔇':'🔊';bgmUpdate();if(muted)stopMusic();else if(S.phase==='play'&&S.cur.type==='music'&&S.cur.r.state==='open')playBuf(S.cur.r.clip,true);return}
   if(a==='gemPanel'){const pn=$('#gemPanel');pn.hidden=!pn.hidden;$('#gemKey').value=GEM.key;$('#gemModel').value=GEM.model;return}
   if(a==='gemSave'||a==='gemClear'||a==='gemTest'){
     const msg=$('#gemMsg'),say=(t,col)=>{msg.textContent=t;msg.style.color=col||'var(--muted)'};

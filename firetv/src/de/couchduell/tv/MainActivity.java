@@ -32,6 +32,8 @@ public class MainActivity extends Activity {
         s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true);
         s.setMediaPlaybackRequiresUserGesture(false);
+        // Immer die neueste Version der Seite laden (sonst hält die WebView sie bis zu 10 Minuten im Cache)
+        s.setCacheMode(WebSettings.LOAD_NO_CACHE);
         web.setWebChromeClient(new WebChromeClient());
         web.setWebViewClient(new WebViewClient() {
             @Override
