@@ -154,6 +154,7 @@ header p{font-size:13px;color:var(--muted);margin-top:3px}
 .map .pin{transform-box:fill-box;transform-origin:50% 100%;animation:pinDrop .5s cubic-bezier(.3,1.7,.5,1) both}
 .map .ring{fill:none;stroke:#ffb400;stroke-width:5;transform-box:fill-box;transform-origin:center;animation:ring 1.4s ease-out infinite}
 .map .ln{stroke-width:3.5;stroke-dasharray:8 8;stroke-linecap:round;animation:dash 1s linear infinite}
+.map .attr{font:500 13px sans-serif;fill:#fff;text-anchor:end;opacity:.75}
 .map .lbl{font:600 22px Fredoka,sans-serif;fill:#1f2a44;paint-order:stroke;stroke:#fff;stroke-width:6}
 
 /* Sortieren */
@@ -482,7 +483,7 @@ body.mode-phone .pscreen{border-radius:0;padding-top:env(safe-area-inset-top);pa
    Ohne Parameter: Fernseher (zeigt QR-Code, führt das Spiel) · ?r=CODE oder #CODE: Handy-Controller
    ?demo: Prototyp-Ansicht mit Fernseher und vier simulierten Handys auf einer Seite
    ===================================================================== */
-const APPV='2026-11-15f'; // bei Änderungen am Protokoll zwischen Fernseher und Handy hochzählen
+const APPV='2026-11-15g'; // bei Änderungen am Protokoll zwischen Fernseher und Handy hochzählen
 const QS=new URLSearchParams(location.search);
 let ROOM=(QS.get('r')||(/^#[A-Za-z0-9]{4}$/.test(location.hash)?location.hash.slice(1):'')).toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,4);
 const MODE=typeof Peer==='undefined'||QS.has('demo')?'demo':(QS.has('r')||ROOM?'phone':'tv');
@@ -507,7 +508,7 @@ const GAMES={
   quiz:    {name:'Buzzer-Quiz',     icon:'❓',desc:'Buzzern und die Antwort laut sagen!'},
   map:     {name:'Wo liegt was?',   icon:'📍',desc:'Tippe die Stelle auf der Karte – wer am nächsten dran ist, punktet.'},
   reaction:{name:'Reaktion',        icon:'⚡',desc:'Drück, sobald es grün wird – kein Fehlstart!'},
-  draw:    {name:'Was wird gemalt?',icon:'✏️',desc:'Ein Tier entsteht Strich für Strich. Buzzern & laut raten!'},
+  draw:    {name:'Was wird gemalt?',icon:'✏️',desc:'Ein Bild entsteht Strich für Strich. Buzzern & laut raten!'},
   music:   {name:'Hit-Quiz',        icon:'🎵',desc:'Ein bekannter Song läuft – buzzern & Titel oder Interpret sagen!'},
   estimate:{name:'Schätzen',        icon:'🎯',desc:'Wer am nächsten dran ist, gewinnt die Runde.'},
   sort:    {name:'Sortieren',       icon:'🔀',desc:'Bring alles in die richtige Reihenfolge – der Schnellste gewinnt.'},
@@ -692,13 +693,32 @@ function next(type,pool){const ai=AI.pool[type];if(aiOn&&ai&&ai.length)return ai
 let SAMPLE=null,DICT=null,DICT_DENIED=false,aiOn=true;
 const AI={state:{},pool:{},denied:false};
 const THEMES=['Geografie','Tiere','Essen & Trinken','Sport','Musik','Filme & Serien','Geschichte','Wissenschaft','Technik','Natur','Sprache & Wörter','Popkultur','Weltraum','Alltag','Deutschland','Erfindungen','Körper & Gesundheit','Kunst'];
+const SVG_ATTR={path:['d'],circle:['cx','cy','r'],ellipse:['cx','cy','rx','ry'],line:['x1','y1','x2','y2'],rect:['x','y','width','height','rx','ry'],polyline:['points']};
+function cleanStroke(str){const m=String(str).match(/^\s*<(\w+)\b([^<>]*?)\/?>\s*(<\/\w+>)?\s*$/);if(!m)return null;
+  const tag=m[1].toLowerCase(),allow=SVG_ATTR[tag];if(!allow)return null;const out={};
+  for(const a of m[2].matchAll(/([\w-]+)\s*=\s*["']([^"']*)["']/g)){const k=a[1].toLowerCase(),v=a[2].trim();if(!allow.includes(k))continue;
+    const ok=k==='d'?/^[MmLlHhVvCcSsQqTtAaZzEe0-9.,\s+-]+$/.test(v):k==='points'?/^[0-9.,\s+-]+$/.test(v):/^-?\d*\.?\d+$/.test(v);if(!ok)return null;out[k]=v}
+  if(!(tag==='rect'?['x','y','width','height']:allow).every(k=>k in out))return null;
+  return `<${tag} ${Object.entries(out).map(([k,v])=>`${k}="${v}"`).join(' ')}/>`}
 const AI_SPECS={
   quiz:{prompt:t=>`Erstelle 15 Quizfragen auf Deutsch für ein lustiges Party-Quiz am Fernseher. Themen-Mix: ${t}. Mittlere Schwierigkeit, nur eindeutig gesicherte Fakten, keine Fragen zu Dingen, die sich oft ändern. Jede Frage hat genau 4 Antwortoptionen mit höchstens 3 Wörtern, die man gut laut aussprechen kann; genau eine ist richtig. Antworte ausschließlich mit einem JSON-Array: [{"q":"Frage?","a":["Option1","Option2","Option3","Option4"],"c":0}] – "c" ist der Index der richtigen Option.`,
     check:x=>typeof x.q==='string'&&Array.isArray(x.a)&&x.a.length===4&&x.a.every(s=>typeof s==='string'&&s.length<=40)&&new Set(x.a).size===4&&Number.isInteger(x.c)&&x.c>=0&&x.c<4,
     fix:x=>{const right=x.a[x.c],a=shuffle(x.a);return{q:x.q.slice(0,140),a,c:a.indexOf(right),ai:true}}},
-  map:{prompt:()=>`Nenne 20 bekannte Orte in Deutschland für ein Karten-Ratespiel: gemischt Großstädte, kleinere bekannte Städte, Berge, Inseln, Seen und Sehenswürdigkeiten, gut über ganz Deutschland verteilt. Gib präzise Koordinaten an. Formuliere den Namen so, dass er in den Satz „Wo liegt …?“ passt (z. B. "Heidelberg", "die Insel Rügen", "der Bodensee"). Antworte ausschließlich mit einem JSON-Array: [{"name":"…","lat":52.52,"lon":13.40}]`,
-    check:x=>typeof x.name==='string'&&x.lat>47.2&&x.lat<55.1&&x.lon>5.8&&x.lon<15.1,
-    fix:x=>{const a=[x.name.slice(0,30),x.lat,x.lon];a.ai=true;return a}},
+  map:{prompt:t=>S.aiWish?`Erstelle ein Karten-Ratespiel („Wo liegt …?“) passend zum Wunsch der Spieler (siehe unten). Wähle zuerst EINE passende Region, die als Karte gezeigt wird (z. B. eine Insel, eine Stadt, ein Land, ein Kontinent oder die ganze Welt), und dann 20 bekannte, gut unterscheidbare Orte darin (Städte, Dörfer, Berge, Strände, Seen, Sehenswürdigkeiten …), gut über die Region verteilt. Die Grenzen der Region (n = nördlichster und s = südlichster Breitengrad, w = westlichster und e = östlichster Längengrad, in Dezimalgrad) sollen alle Orte knapp umschließen. Gib präzise Koordinaten an. Formuliere die Namen so, dass sie in den Satz „Wo liegt …?“ passen (z. B. "Maspalomas", "der Roque Nublo"). Antworte ausschließlich mit JSON in genau dieser Form: {"region":{"name":"…","n":28.2,"s":27.7,"w":-15.9,"e":-15.3},"places":[{"name":"…","lat":27.76,"lon":-15.58}]}`
+    :`Nenne 20 bekannte Orte in Deutschland für ein Karten-Ratespiel: gemischt Großstädte, kleinere bekannte Städte, Berge, Inseln, Seen und Sehenswürdigkeiten, gut über ganz Deutschland verteilt. Gib präzise Koordinaten an. Formuliere den Namen so, dass er in den Satz „Wo liegt …?“ passt (z. B. "Heidelberg", "die Insel Rügen", "der Bodensee"). Antworte ausschließlich mit einem JSON-Array: [{"name":"…","lat":52.52,"lon":13.40}]`,
+    // Mit Region (Wunsch): eigener Kartenausschnitt; ohne: Deutschland-Umriss
+    parse:res=>{const g=res&&!Array.isArray(res)&&res.region,list=Array.isArray(res)?res:((res&&(res.places||res.items))||[]);
+      const num=v=>typeof v==='number'&&isFinite(v),pts=list.filter(x=>x&&num(x.lat)&&num(x.lon));
+      if(!g)return pts.map(x=>({...x,view:null}));
+      if(![g.n,g.s,g.w,g.e].every(num)||!(g.n>g.s&&g.e>g.w)||g.n-g.s>150||g.e-g.w>350||Math.abs(g.n)>85||Math.abs(g.s)>85)return [];
+      const pad=Math.max(g.n-g.s,g.e-g.w)*.2,ins=pts.filter(x=>x.lat<=g.n+pad&&x.lat>=g.s-pad&&x.lon>=g.w-pad&&x.lon<=g.e+pad);if(!ins.length)return [];
+      const b={n:Math.max(g.n,...ins.map(x=>x.lat)),s:Math.min(g.s,...ins.map(x=>x.lat)),w:Math.min(g.w,...ins.map(x=>x.lon)),e:Math.max(g.e,...ins.map(x=>x.lon))};
+      const view=mapView(b),region=String(g.name||'').slice(0,40);return ins.map(x=>({...x,view,region}))},
+    check:x=>typeof x.name==='string'&&(x.view?true:x.lat>47.2&&x.lat<55.1&&x.lon>5.8&&x.lon<15.1),
+    fix:x=>{const a=[x.name.slice(0,34),x.lat,x.lon];a.ai=true;a.view=x.view||null;a.region=x.region||'';return a}},
+  draw:{prompt:t=>`Erstelle 10 Bilder für ein Montagsmaler-Ratespiel („Was wird gemalt?“) auf Deutsch. Themen-Mix: ${t}. Wähle Begriffe (Tiere, Gegenstände, Gebäude, Essen, Fahrzeuge, Pflanzen, Wahrzeichen …), die man als einfache Strichzeichnung gut erkennt und mit 1–3 Wörtern benennen kann. Jede Zeichnung besteht aus 6 bis 14 SVG-Elementen in einer viewBox "0 0 200 160" (Motiv mittig und groß), in sinnvoller Zeichenreihenfolge: zuerst grobe Umrisse, die verräterischen Details zuletzt. Erlaubt sind nur <path d="…"/>, <circle cx cy r/>, <ellipse cx cy rx ry/>, <line x1 y1 x2 y2/>, <rect x y width height/> und <polyline points="…"/> – ohne fill-, stroke-, style-, transform- oder class-Attribute und ohne Text. "syn" enthält 2–6 akzeptierte Antworten in Kleinbuchstaben (Synonyme, Mehrzahl, Umgangssprache). Antworte ausschließlich mit einem JSON-Array: [{"n":"Leuchtturm","syn":["leuchtturm","leuchtfeuer"],"s":["<rect x=\\"88\\" y=\\"40\\" width=\\"24\\" height=\\"95\\"/>","…"]}]`,
+    check:x=>typeof x.n==='string'&&x.n.trim().length>1&&x.n.length<=30&&Array.isArray(x.s)&&x.s.length<=24&&x.s.map(cleanStroke).filter(Boolean).length>=4,
+    fix:x=>({n:x.n.trim(),syn:[...new Set([x.n,...(Array.isArray(x.syn)?x.syn:[])].map(v=>String(v).slice(0,40)))].slice(0,8),s:x.s.map(cleanStroke).filter(Boolean).slice(0,18),ai:true})},
   estimate:{prompt:t=>`Erstelle 15 Schätzfragen auf Deutsch für ein Partyspiel. Themen-Mix: ${t}. Jede Antwort ist eine einzelne, eindeutig belegte Zahl (keine Spannen, keine Werte, die sich ständig ändern). Antworte ausschließlich mit einem JSON-Array: [{"q":"Wie hoch ist …?","u":"Einheit oder leer","v":123}]`,
     check:x=>typeof x.q==='string'&&typeof x.v==='number'&&isFinite(x.v),
     fix:x=>({q:x.q.slice(0,140),u:String(x.u||'').slice(0,12),v:x.v,ai:true})},
@@ -733,7 +753,7 @@ async function aiGenerate(type){
     const themes=S.aiWish?`passend zum Wunsch der Spieler (siehe unten)`:shuffle([...shuffle(MOTTO.t).slice(0,3),...shuffle(THEMES.filter(t=>!MOTTO.t.includes(t))).slice(0,2)]).join(', ');
     const prompt=AI_SPECS[type].prompt(themes)+wish;
     let res;try{res=await askJSON(prompt)}catch(e){if(e&&e.code==='not_granted')throw e;await new Promise(r=>setTimeout(r,2500));res=await askJSON(prompt)} // ein zweiter Versuch bei Netz-/Limit-Fehlern
-    const arr=Array.isArray(res)?res:(res&&Array.isArray(res.items)?res.items:[]);
+    const sp=AI_SPECS[type],arr=sp.parse?sp.parse(res):Array.isArray(res)?res:(res&&Array.isArray(res.items)?res.items:[]);
     const items=arr.filter(x=>{try{return x&&AI_SPECS[type].check(x)}catch(e){return false}}).map(AI_SPECS[type].fix);
     if(items.length>=4){AI.pool[type]=shuffle(items);AI.state[type]='ready'}else AI.state[type]='error';
   }catch(e){AI.state[type]='error';if(e&&e.code==='not_granted'){aiOn=false;AI.denied=true}}
@@ -755,7 +775,8 @@ function setGemKey(key){
     .catch(e=>{AIMSG={t:(e.code==='bad_key'?'Key ungültig: ':e.code==='rate_limited'?'Limit erreicht: ':'Fehler: ')+String(e.message||'').slice(0,90),ok:false}})
     .finally(()=>{if(GEM.key===key)renderAll()})}
 // Wird direkt aus dem Klick des Gastgebers gestartet (erste Nutzung fragt einmal nach Erlaubnis)
-async function aiPrefetch(){AI.state={};AI.pool={};for(const t of [...S.prog])if(AI_SPECS[t]&&aiOn)await aiGenerate(t)}
+async function aiPrefetch(reset){if(reset){AI.state={};AI.pool={}}if(!aiOn||!aiProvider())return;await Promise.all([...new Set(S.prog)].filter(t=>AI_SPECS[t]).map(t=>aiGenerate(t)))}
+const aiReady=()=>{const t=[...new Set(S.prog)].filter(x=>AI_SPECS[x]);if(!t.length)return '';const n=t.filter(x=>AI.state[x]==='ready').length,l=t.some(x=>AI.state[x]==='loading');return ` · ${n}/${t.length} Spiele fertig${l?' …':''}`};
 function aiStatus(){
   const pv=aiProvider(),b=$('#aiBtn');if(b){b.disabled=!pv;b.style.opacity=pv?1:.55;
     b.textContent=!pv?'🤖 KI aus (Gemini-Key fehlt)':AI.denied?'🤖 KI nicht erlaubt':`🤖 KI-Fragen: ${aiOn?'an':'aus'} · ${pv}`}
@@ -1134,9 +1155,24 @@ function realQR(){
   return realQR.c=`<svg class="qr" viewBox="-2 -2 ${n+4} ${n+4}" shape-rendering="crispEdges"><rect x="-2" y="-2" width="${n+4}" height="${n+4}" fill="#fff"/><g fill="#1F2A44">${s}</g></svg>`}
 
 /* ---------- Karte ---------- */
-const proj=(lat,lon)=>[(lon-5.6)*63,(55.2-lat)*100];
-const unproj=(x,y)=>({lat:55.2-y/100,lon:x/63+5.6});
-const DE_PATH='M'+DE.map(([lo,la])=>proj(la,lo).map(v=>v.toFixed(1)).join(' ')).join(' L')+' Z';
+const projDE=(lat,lon)=>[(lon-5.6)*63,(55.2-lat)*100];
+const unprojDE=(x,y)=>({lat:55.2-y/100,lon:x/63+5.6});
+const DE_PATH='M'+DE.map(([lo,la])=>projDE(la,lo).map(v=>v.toFixed(1)).join(' ')).join(' L')+' Z';
+// Freier Ausschnitt (Region von der KI): Web-Mercator, eingepasst in die Kartenfläche 605 × 800
+const mX=lon=>(lon+180)/360,mY=lat=>{const t=Math.sin(Math.max(-85,Math.min(85,lat))*Math.PI/180);return .5-Math.log((1+t)/(1-t))/(4*Math.PI)};
+const mLat=y=>Math.atan(Math.sinh(Math.PI*(1-2*y)))*180/Math.PI,mLon=x=>x*360-180;
+function mapView(g){const x1=mX(g.w),x2=mX(g.e),y1=mY(g.n),y2=mY(g.s);
+  return {cx:(x1+x2)/2,cy:(y1+y2)/2,sc:Math.min(605/Math.max(x2-x1,1e-6),800/Math.max(y2-y1,1e-6),256*2**16)*.85}}
+const curView=()=>(S.cur&&S.cur.type==='map'&&S.cur.r&&S.cur.r.q&&S.cur.r.q.view)||null;
+const proj=(lat,lon,v=curView())=>v?[302.5+(mX(lon)-v.cx)*v.sc,400+(mY(lat)-v.cy)*v.sc]:projDE(lat,lon);
+const unproj=(x,y,v=curView())=>v?{lat:mLat(v.cy+(y-400)/v.sc),lon:mLon(v.cx+(x-302.5)/v.sc)}:unprojDE(x,y);
+// Satellitenbilder ohne Beschriftung (sonst stünde die Lösung auf der Karte)
+function tilesSVG(v){const z=Math.max(0,Math.min(17,Math.round(Math.log2(v.sc/256)))),n=2**z,ts=v.sc/n;
+  const x0=v.cx-322.5/v.sc,x1=v.cx+322.5/v.sc,y0=v.cy-420/v.sc,y1=v.cy+420/v.sc;let t='';
+  for(let ty=Math.floor(y0*n);ty<=Math.floor(y1*n);ty++){if(ty<0||ty>=n)continue;
+    for(let tx=Math.floor(x0*n);tx<=Math.floor(x1*n);tx++){const wx=((tx%n)+n)%n,x=302.5+(tx/n-v.cx)*v.sc,y=400+(ty/n-v.cy)*v.sc;
+      t+=`<image href="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${ty}/${wx}" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(ts+.8).toFixed(1)}" height="${(ts+.8).toFixed(1)}"/>`}}
+  return `<clipPath id="mclip"><rect x="-20" y="-20" width="645" height="840" rx="26"/></clipPath><g clip-path="url(#mclip)"><rect x="-20" y="-20" width="645" height="840" fill="#1d3b5c"/>${t}</g><text class="attr" x="612" y="812">Bilder © Esri</text>`}
 function km(a,b){const R=6371,r=Math.PI/180,dl=(b.lat-a.lat)*r,dn=(b.lon-a.lon)*r;
   const h=Math.sin(dl/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dn/2)**2;return 2*R*Math.asin(Math.sqrt(h))}
 const pinSVG=(x,y,col,delay=0)=>`<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)})"><g class="pin" style="animation-delay:${delay}s"><path d="M0 0 C-9 -13 -15 -20 -15 -29 a15 15 0 1 1 30 0 c0 9 -6 16 -15 29Z" fill="${col}" stroke="#fff" stroke-width="3.5"/><circle cy="-29" r="5.5" fill="#fff"/></g></g>`;
@@ -1147,7 +1183,8 @@ function mapSVG({pins=[],target=null,attrs=''}={}){
   pins.forEach((p,i)=>{const [x,y]=proj(p.lat,p.lon);s+=pinSVG(x,y,p.color,i*.12)});
   if(target){const [tx,ty]=proj(target.lat,target.lon);
     s+=`<circle class="ring" cx="${tx}" cy="${ty}" r="16"/><circle cx="${tx}" cy="${ty}" r="11" fill="#FFB400" stroke="#fff" stroke-width="4"/><text class="lbl" x="${tx+18}" y="${ty-14}">${esc(target.name)}</text>`}
-  return `<svg class="map" viewBox="-20 -20 645 840" ${attrs}><path class="land" d="${DE_PATH}"/>${s}</svg>`}
+  const v=curView();
+  return `<svg class="map" viewBox="-20 -20 645 840" ${attrs}>${v?tilesSVG(v):`<path class="land" d="${DE_PATH}"/>`}${s}</svg>`}
 
 /* ---------- Zeichnung ---------- */
 function drawSVG(a,e,running){const n=a.s.length,T=13,d=1;
@@ -1295,7 +1332,7 @@ function handle(pid,m){
     case 'aiWish':
       if(pid!==S.hostId||S.phase!=='lobby'||typeof m.v!=='string'||m.v.length>300)return;
       S.aiWish=m.v.trim().slice(0,200);try{localStorage.setItem('cd_ai_wish',S.aiWish)}catch(e){}
-      AI.state={};AI.pool={};aiStatus();renderAll();break;
+      AI.state={};AI.pool={};aiStatus();renderAll();if(MODE==='tv')aiPrefetch();break; // gleich in der Lobby mit dem Schreiben anfangen
     case 'gemSet':
       if(pid!==S.hostId||S.phase!=='lobby'||typeof m.key!=='string'||m.key.length>200)return;setGemKey(m.key.trim());break;
     case 'setLen':
@@ -1311,6 +1348,12 @@ function handle(pid,m){
         else S.prog.push(m.t);
         S.len=0}
       sfx('tick');renderAll();break;
+    case 'endGame': // Gastgeber beendet den Abend sofort → Endstand
+      if(pid!==S.hostId||!['intro','play','roundEnd','gameWin','scores'].includes(S.phase))return;
+      stopListening();stopMusic();finish();break;
+    case 'toLobby':
+      if(pid!==S.hostId||S.phase!=='final')return;
+      P.forEach(q=>{q.score=0;q.prevScore=0});S.cur=null;S.phase='lobby';sfx('whoosh');renderAll();break;
     case 'skipGame':
       if(pid!==S.hostId||!['intro','play','roundEnd'].includes(S.phase))return;
       stopListening();stopMusic();sfx('whoosh');
@@ -1399,7 +1442,7 @@ function handle(pid,m){
 
     case 'restart':
       if(pid!==S.hostId||S.phase!=='final')return;
-      P.forEach(q=>{q.score=0;q.prevScore=0});S.recorded=false;if(MODE==='tv'&&aiOn&&aiProvider())aiPrefetch();sfx('start');startGame(0);break;
+      P.forEach(q=>{q.score=0;q.prevScore=0});S.recorded=false;if(MODE==='tv'&&aiOn&&aiProvider())aiPrefetch(true);sfx('start');startGame(0);break;
   }
 }
 function wrongAnswer(pid,text){
@@ -1423,7 +1466,8 @@ function startGame(gi){
   renderAll();sfx('whoosh');
   step(()=>{
     // Falls Claude die Fragen für dieses Spiel noch erstellt: kurz warten (max. 30 s), sonst Fallback-Fragen
-    if(aiOn&&aiProvider()&&AI.state[type]==='loading'){S.cur.aiWait=true;renderTV();step(()=>{if(S.cur.aiWait){S.cur.aiWait=false;startRound()}},30000)}
+    if(aiOn&&aiProvider()&&AI_SPECS[type]&&!AI.state[type])aiGenerate(type);
+    if(aiOn&&aiProvider()&&AI.state[type]==='loading'){S.cur.aiWait=true;renderTV();step(()=>{if(S.cur.aiWait){S.cur.aiWait=false;startRound()}},45000)}
     else startRound();
   },3600);
 }
@@ -1459,7 +1503,7 @@ function startRound(){
       step(()=>{r.state='input';r.dur=6000+n*1500;r.deadline=now()+r.dur;sfx('go');renderAll();step(()=>endRound(null),r.dur)},1000+n*650+300);break}
     case 'circle':Object.assign(r,{draws:{},dur:20000,deadline:now()+20000});step(()=>endRound(),20000);break;
     case 'estimate':Object.assign(r,{q:next('estimate',EST),guesses:{},dur:20000,deadline:now()+20000});step(()=>endRound(),20000);break;
-    case 'map':{const pl=next('map',PLACES);Object.assign(r,{q:{name:pl[0],lat:pl[1],lon:pl[2],ai:!!pl.ai},pins:{},dur:20000,deadline:now()+20000});step(()=>endRound(),20000);break}
+    case 'map':{const pl=next('map',PLACES);Object.assign(r,{q:{name:pl[0],lat:pl[1],lon:pl[2],ai:!!pl.ai,view:pl.view||null,region:pl.region||''},pins:{},dur:20000,deadline:now()+20000});step(()=>endRound(),20000);break}
     case 'sort':Object.assign(r,{q:next('sort',SORTS),order:shuffle([0,1,2,3]),locked:{},dur:25000,deadline:now()+25000});
       if(r.order.join()==='0,1,2,3')r.order=[2,0,3,1];step(()=>endRound(null),25000);break;
   }
@@ -1509,7 +1553,7 @@ function finish(){S.phase='final';recordEvening();renderAll();confetti(170);sfx(
 /* =====================================================================
    TV-ANSICHTEN
    ===================================================================== */
-const hud=()=>`<div class="hud"><div class="pill">Spiel ${S.gi+1}/${PLAY.length} · ${GAMES[S.cur.type].name} · Runde ${S.cur.rno}${S.cur.r&&S.cur.r.q&&S.cur.r.q.ai?' · 🤖 KI-Frage':''}</div><div class="pill gold">Spielsieg: +${ptsTxt(S.cur.pts)}</div></div>`;
+const hud=()=>`<div class="hud"><div class="pill">Spiel ${S.gi+1}/${PLAY.length} · ${GAMES[S.cur.type].name} · Runde ${S.cur.rno}${S.cur.r&&((S.cur.r.q&&S.cur.r.q.ai)||(S.cur.r.a&&S.cur.r.a.ai))?' · 🤖 KI':''}</div><div class="pill gold">Spielsieg: +${ptsTxt(S.cur.pts)}</div></div>`;
 const timerBar=()=>`<div class="timer"><div id="tbar"></div></div>`;
 function pips(p){const c=S.cur,n=c.rp[p.id]||0,isNew=S.phase==='roundEnd'&&c.r&&c.r.winner===p.id;
   return `<div class="pips" style="--c:${p.color}">${Array.from({length:S.target},(_,i)=>`<span class="pip ${i<n?'on':''} ${isNew&&i===n-1?'new':''}"></span>`).join('')}</div>`}
@@ -1536,7 +1580,7 @@ function tvLobby(){
     <div class="lgrid"><div class="joincard">${MODE==='tv'?realQR():QR}<p>Mit dem Handy scannen</p><div class="code">Raumcode<b>${ROOM&&(MODE!=='tv'||NET.everOpen)?ROOM:'····'}</b></div>${MODE==='tv'&&NET.everOpen?`<p class="joinurl">${esc((location.host+location.pathname).replace(/\/(index\.html)?$/,''))}#${ROOM}</p>`:''}</div><div class="slots">${slots}</div></div>
     <div class="gamelist">${S.prog.map((t,k)=>`<span><b>${k+1}</b> ${GAMES[t].icon} ${GAMES[t].name}</span>`).join('')}</div>
     <div class="inforow">${S.prog.includes('music')?`<div class="ailine" style="color:#1f7a5a;background:#e6fbf2">🎵 Hit-Quiz: ${esc(musicName(S.music))}</div>`:''}
-    ${aiProvider()&&aiOn?`<div class="ailine">🤖 ${aiProvider()} schreibt neue Fragen zum Motto${S.aiWish?` · Wunsch: „${esc(S.aiWish.length>40?S.aiWish.slice(0,40)+'…':S.aiWish)}“`:''}</div>`:''}
+    ${aiProvider()&&aiOn?`<div class="ailine">🤖 ${aiProvider()} schreibt neue Fragen ${S.aiWish?'nach eurem Wunsch':'zum Motto'}${aiReady()}${S.aiWish?` · Wunsch: „${esc(S.aiWish.length>40?S.aiWish.slice(0,40)+'…':S.aiWish)}“`:''}</div>`:''}
     ${hof()?`<div class="ailine" style="color:#a86a00;background:#fff6dc">🏆 Dauerwertung: ${hof()}</div>`:''}</div>
     <div class="hint">${n<2?'Warte auf Spieler … (mindestens 2)':`${esc(host.name)} kann den Abend jetzt starten!${MODE==='tv'?' (oder OK auf der Fernbedienung)':''}`}</div>${NET.status?`<div class="netline">📡 ${NET.status}</div>`:''}</div>`}
 function tvIntro(){const c=S.cur,g=GAMES[c.type];
@@ -1550,7 +1594,7 @@ function tvPlay(){
     case 'quiz':return hud()+`<div class="stage"><div class="qbox">${esc(r.q.q)}</div><div class="opts">${r.q.a.map((a,i)=>`<div class="opt o${i}" style="animation-delay:${.2+i*.08}s"><b>${'ABCD'[i]}</b>${esc(a)}</div>`).join('')}</div>${buzzPart()||'<div class="rhint">🔴 Buzzern und Antwort laut sagen!</div>'}${timerBar()}${toastPart()}</div>`+buzzStrip();
     case 'draw':{const e=(r.clock.total-remain(r.clock))/1000;
       return hud()+`<div class="stage"><div class="row"><div class="paper">${drawSVG(r.a,e,r.clock.running)}<div class="pencil">✏️</div></div>
-        <div class="col"><div class="qbox">Welches Tier wird hier gemalt?</div>${buzzPart()||'<div class="rhint">🔴 Wer es erkennt: buzzern & laut sagen!</div>'}</div></div>${timerBar()}${toastPart()}</div>`+buzzStrip()}
+        <div class="col"><div class="qbox">Was wird hier gemalt?</div>${buzzPart()||'<div class="rhint">🔴 Wer es erkennt: buzzern & laut sagen!</div>'}</div></div>${timerBar()}${toastPart()}</div>`+buzzStrip()}
     case 'music':{const playing=r.state==='open'&&!r.loading;
       if(r.loading)return hud()+`<div class="stage"><div class="row"><div class="vinyl stop"></div><div class="col"><div class="rev">♪ Hör genau hin</div><div class="qbox">Welches Lied ist das?</div><div class="aiwait" style="margin:0">🎧 Song wird geladen …</div></div></div>${timerBar()}</div>`+buzzStrip();
       return hud()+`<div class="stage"><div class="row"><div class="vinyl ${playing?'':'stop'}"></div>
@@ -1576,7 +1620,7 @@ function tvPlay(){
       return hud()+`<div class="stage"><div class="qbox">${esc(r.q.q)}</div><div class="estbig">?<small>${esc(r.q.u)}</small></div><div class="esub">${n} von ${joined().length} Tipps abgegeben</div>${timerBar()}</div>`
         +strip(()=>'happy',p=>r.guesses[p.id]?'<span class="badge ok">✓</span>':'')}
     case 'map':{const n=Object.keys(r.pins).length;
-      return hud()+`<div class="stage"><div class="row"><div class="mapbox">${mapSVG()}</div><div class="col"><div class="qbox"><small>Wo liegt …</small>${esc(r.q.name)}?</div>
+      return hud()+`<div class="stage"><div class="row"><div class="mapbox">${mapSVG()}</div><div class="col"><div class="qbox"><small>Wo liegt …</small>${esc(r.q.name)}?${r.q.region?`<small>🗺️ ${esc(r.q.region)}</small>`:''}</div>
         <div class="esub">📍 ${n} von ${joined().length} Pins gesetzt</div><div class="rhint">Tippe die Stelle auf deinem Handy!</div></div></div>${timerBar()}</div>`
         +strip(()=>'happy',p=>r.pins[p.id]?'<span class="badge ok">✓</span>':'')}
     case 'sort':return hud()+`<div class="stage"><div class="qbox">${esc(r.q.q)}</div><div class="scards">${r.order.map((idx,k)=>`<div class="scard" style="animation-delay:${.2+k*.08}s">${esc(r.q.items[idx][0])}</div>`).join('')}</div>
@@ -1645,7 +1689,7 @@ function buzzPhone(i){
       <div class="prow"><input class="pinput" data-in="say" data-p="${i}" placeholder="oder tippen …" value="${esc(p.draftSay)}" autocomplete="off"><button class="pbtn small" data-act="say" data-p="${i}">✓</button></div>`}
   if(r.state==='answering')return `<div class="pc-center">${avatar(P[r.buzzer],{mood:'wow',cls:'idle'})}<div class="ptxt"><b>${esc(P[r.buzzer].name)}</b> antwortet …</div><div class="psmall">Daumen drücken, dass es falsch ist 😏</div></div>`;
   if(r.loading)return `<div class="pc-center"><div class="pbig bounce">🎧</div><div class="ptxt">Song wird geladen …</div></div>`;
-  const hint={quiz:'Antwort gewusst?',draw:'Tier erkannt?',music:r.song&&r.song.dz?'Titel oder Interpret?':'Lied erkannt?'}[c.type];
+  const hint={quiz:'Antwort gewusst?',draw:'Erkannt?',music:r.song&&r.song.dz?'Titel oder Interpret?':'Lied erkannt?'}[c.type];
   return `<div class="pq">${hint}</div><div class="pc-center"><button class="bigbtn buzz" data-act="buzz" data-p="${i}">BUZZER</button><div class="psmall">Danach Antwort laut sagen 🎤</div></div>${myPips(p)}`}
 function phoneBody(i){
   const p=P[i],c=S.cur;
@@ -1752,7 +1796,7 @@ function phoneBody(i){
       return `<div class="pc-center">${avatar(p,{mood:'sad',cls:'sad'})}<div class="ptxt"><b>${esc(P[c.gw].name)}</b> holt das Spiel</div>${hostNext(i)}</div>`;
     case 'scores':return `<div class="pc-center"><div class="pplace">${rankOf(p)}.</div><div class="ptxt">${ptsTxt(p.score)}</div>${hostNext(i)}</div>`;
     case 'final':{const r=rankOf(p);
-      return `<div class="pc-center"><div class="pbig bounce">${['🥇','🥈','🥉','🎖️'][Math.min(r,4)-1]}</div><div class="ptxt"><b>${r===1?'Du hast gewonnen!':'Platz '+r}</b></div><div class="psmall">${ptsTxt(p.score)}</div>${host?`<button class="pbtn" data-act="restart" data-p="${i}">Nochmal spielen</button>`:''}</div>`}
+      return `<div class="pc-center"><div class="pbig bounce">${['🥇','🥈','🥉','🎖️'][Math.min(r,4)-1]}</div><div class="ptxt"><b>${r===1?'Du hast gewonnen!':'Platz '+r}</b></div><div class="psmall">${ptsTxt(p.score)}</div>${host?`<button class="pbtn" data-act="restart" data-p="${i}">Nochmal spielen</button><button class="pbtn ghost" data-act="toLobby" data-p="${i}">Zurück zur Lobby</button>`:''}</div>`}
   }
   return ''}
 let lastH='';const normH=h=>h.replace(/g\d+/g,'');
@@ -1767,7 +1811,9 @@ function phoneHTML(i){const p=P[i];
   // Gastgeber kann jederzeit das laufende Spiel überspringen (zweimal tippen zum Bestätigen)
   const skip=p.joined&&i===S.hostId&&['intro','play','roundEnd'].includes(S.phase)
     ?`<button class="skipbtn ${now()-p.skipArm<3000?'armed':''}" data-act="skip" data-p="${i}">${now()-p.skipArm<3000?'Nochmal tippen zum Überspringen':'⏭ Spiel überspringen'}</button>`:'';
-  return `<div class="pstatus"><span>20:15</span><span>${ROOM}</span></div><div class="phead">${p.joined?esc(p.name)+(i===S.hostId?' 👑':''):'Couch-Duell'}</div><div class="pbody">${phoneBody(i)}${skip}</div>`}
+  const end=p.joined&&i===S.hostId&&['intro','play','roundEnd','gameWin','scores'].includes(S.phase)
+    ?`<button class="skipbtn ${now()-p.endArm<3000?'armed':''}" data-act="endAsk" data-p="${i}">${now()-p.endArm<3000?'Nochmal tippen: Abend beenden':'⏹ Abend beenden'}</button>`:'';
+  return `<div class="pstatus"><span>20:15</span><span>${ROOM}</span></div><div class="phead">${p.joined?esc(p.name)+(i===S.hostId?' 👑':''):'Couch-Duell'}</div><div class="pbody">${phoneBody(i)}${skip}${end}</div>`}
 function renderAll(){renderTV();P.forEach((_,i)=>renderPhone(i));$('#target').disabled=S.phase!=='lobby';musicUI()}
 
 /* =====================================================================
@@ -1807,7 +1853,7 @@ document.addEventListener('click',e=>{
       .catch(e=>say((e.code==='bad_key'?'Key oder Modellname ungültig: ':e.code==='rate_limited'?'Limit erreicht: ':(SAMPLE?'In der Claude-Vorschau blockiert – bitte in der Datei testen. ':'Fehler: '))+e.message.slice(0,120),'#e8590c'));
     return}
   if(a==='ai'){if(!aiProvider()||AI.denied)return;aiOn=!aiOn;aiStatus();return}
-  if(MODE==='demo'&&(a==='start'||a==='restart')&&+b.dataset.p===S.hostId&&aiOn&&aiProvider()&&(a==='restart'||joined().length>=2))aiPrefetch();
+  if(MODE==='demo'&&(a==='start'||a==='restart')&&+b.dataset.p===S.hostId&&aiOn&&aiProvider()&&(a==='restart'||joined().length>=2))aiPrefetch(a==='restart');
   if(a==='resetStore'){ // zweimal tippen zum Bestätigen
     if(b.dataset.arm){STORE={days:[],wins:{},seen:{}};saveStore();delete b.dataset.arm;b.textContent='🏆 Dauerwertung gelöscht';if(S.phase==='lobby')renderTV()}
     else{b.dataset.arm='1';b.textContent='Wirklich löschen?';setTimeout(()=>{if(b.dataset.arm){delete b.dataset.arm;b.textContent='🏆 Dauerwertung löschen'}},3000)}
@@ -1839,6 +1885,10 @@ document.addEventListener('click',e=>{
     case 'gemDel':p.gemPending=now();send(i,{type:'gemSet',key:''});renderPhone(i);break;
     case 'toggleGame':send(i,{type:'toggleGame',t:b.dataset.v});break;
     case 'setLen':send(i,{type:'setLen',n:+b.dataset.v});break;
+    case 'endAsk':
+      if(now()-p.endArm<3000){p.endArm=0;send(i,{type:'endGame'})}
+      else{p.endArm=now();renderPhone(i);setTimeout(()=>{if(p.endArm&&now()-p.endArm>=2900){p.endArm=0;renderPhone(i)}},3000)}
+      break;
     case 'skip':
       if(now()-p.skipArm<3000){p.skipArm=0;send(i,{type:'skipGame'})}
       else{p.skipArm=now();renderPhone(i);setTimeout(()=>{if(p.skipArm&&now()-p.skipArm>=2900){p.skipArm=0;renderPhone(i)}},3000)}
