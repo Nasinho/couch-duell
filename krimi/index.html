@@ -144,6 +144,7 @@ button{font:inherit;cursor:pointer}
 .ptop{position:sticky;top:0;z-index:3;background:rgba(20,22,28,.95);backdrop-filter:blur(6px);padding:12px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
 .ptop .t{font-weight:800;font-size:17px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ptop .tm{color:var(--amber);font-variant-numeric:tabular-nums;font-weight:700}
+.ptop .claim{border:1px solid var(--line);background:none;color:var(--mute);border-radius:99px;padding:5px 10px;font:600 12px Inter,sans-serif;white-space:nowrap}.ptop .claim.on{color:var(--amber);border-color:var(--amber)}
 .pbody{flex:1;padding:16px 16px 100px}
 .tabs{position:fixed;left:0;right:0;bottom:0;display:flex;background:#191c24;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);z-index:4}
 .tabs button{flex:1;background:none;border:0;color:var(--mute);padding:10px 0 12px;font-size:12px;font-weight:600;position:relative}
@@ -207,7 +208,7 @@ label.l{display:block;color:var(--mute);font-size:13px;font-weight:600;margin:16
    Der Fernseher schreibt mit Gemini den Fall (Fallplan → Kapitel → Fotos → Stimmen), hält den Spielstand
    und speichert alles in IndexedDB, damit ein Neuladen den Fall nicht beendet.
    ===================================================================== */
-const APPV='2026-11-15k9';
+const APPV='2026-11-15kb';
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const now=()=>Date.now();
@@ -602,7 +603,10 @@ let K={phase:'lobby',wish:'',min:60,level:'normal',ch:0,unlocked:[],heard:[],hin
 const P=[];                // Spieler {id,name,color,joined,cid}
 let hostId=null;const BOOT=Date.now();
 // Spielleiter weg (Handy aus / Verbindung verloren)? Dann übernimmt der nächste aktive Spieler – nach dem TV-Start erst nach 20 s, damit sich alle wieder verbinden können
-const hostGone=()=>hostId==null||!P[hostId]||!P[hostId].joined||(!(NET.conns[hostId]&&NET.conns[hostId].open)&&Date.now()-BOOT>20000);
+// Handys melden sich alle 5 s (Lebenszeichen). Wer 30 s still ist, gilt als offline und verschwindet aus der Spielerliste.
+const OFF_MS=30000,online=p=>!!(p&&p.joined&&Date.now()-(p.seen||0)<OFF_MS),onlineP=()=>P.filter(online);
+// Spielleiter seit 60 s offline? Dann übernimmt der nächste aktive Spieler (nach dem TV-Start erst nach 60 s)
+const hostGone=()=>hostId==null||!P[hostId]||!P[hostId].joined||(Date.now()-(P[hostId].seen||0)>60000&&Date.now()-BOOT>60000);
 const host=()=>P.find(p=>p.id===hostId);
 const elapsed=()=>K.elapsed+(K.runAt?now()-K.runAt:0);
 function toast(t){K.toast={t,at:now()};renderTV();setTimeout(()=>{if(K.toast&&now()-K.toast.at>=3900){K.toast=null;renderTV()}},4000)}
@@ -663,6 +667,8 @@ function handle(pid,m){
         pick:{taeter:m.taeter,motiv:+m.motiv,methode:+m.methode,beweis:m.beweis},by:p.name};
       K.elapsed=elapsed();K.runAt=0;K.phase='end';K.score=score();saveProg();setTimeout(solAudio,2500);break}
     case 'newGame':if(!isHost||K.phase!=='end')return;discardCase();break;
+    // Jeder Mitspieler kann die Spielleitung übernehmen (z. B. wenn das Spielleiter-Handy aus ist)
+    case 'claimHost':if(!p.joined||isHost)return;hostId=pid;savePlayers();toast(`👑 ${p.name} ist jetzt Spielleiter`);break;
     case 'getEv':{const b=evById(m.id);if(!b||!K.unlocked.includes(m.id))return;
       tell(pid,{t:'ev',ev:pubEv(b)});if(b.typ==='foto'&&IMG[b.id])sendImg(pid,b.id);return}
     default:return}
@@ -716,7 +722,7 @@ function qrSVG(){if(!ROOM||typeof qrcode==='undefined')return '';if(qrSVG.k===RO
   qrSVG.k=ROOM;return qrSVG.c=`<svg viewBox="-2 -2 ${n+4} ${n+4}" shape-rendering="crispEdges"><rect x="-2" y="-2" width="${n+4}" height="${n+4}" fill="#fff"/><g fill="#1b1e26">${s}</g></svg>`}
 function stepsHTML(){return `<div class="steps">${GEN.steps.map(s=>`<div class="${s.state}">${s.state==='now'?'<span class="spin"></span>':s.state==='ok'?'✅':'⚠️'} ${esc(s.label)}</div>`).join('')}${GEN.busy&&GEN.chars?`<div>✍️ ${(GEN.chars/1000).toFixed(1)}k Zeichen geschrieben …</div>`:''}</div>`}
 function renderTV(){
-  if(MODE!=='tv')return;const tv=$('#tv');const joined=P.filter(p=>p.joined);
+  if(MODE!=='tv')return;const tv=$('#tv');const joined=onlineP();
   const hdr=`<div class="tvh"><div class="brand">Couch-<b>Krimi</b></div>${C&&C.plan?`<div class="pill">🗂️ <b>${esc(C.titel)}</b></div>`:''}<div class="grow"></div>
     ${K.phase==='play'||K.phase==='accuse'?`<div class="pill">Kapitel <b>${Math.min(K.ch+1,C.kapitel.length)}/${C.kapitel.length}</b></div><div class="pill">⏱ <b id="clock">${fmtT(elapsed())}</b></div><div class="pill">⭐ <b>${score()}</b></div>`:''}
     ${ROOM?`<div class="pill">Raum <b>${ROOM}</b></div>`:''}</div>`;
@@ -772,7 +778,7 @@ const peerId=code=>'couchkrimi-'+code.toLowerCase();
 function tell(i,o){const c=NET.conns[i];if(c&&c.open){try{c.send(o)}catch(e){}}}
 function pubState(pid){
   const plan=C&&C.plan;const s={V:APPV,phase:K.phase,wish:K.wish,min:K.min,level:K.level,ch:K.ch,hostId,me:pid,keyOk:!!GEM.key,keyMsg:K.keyMsg||null,
-    players:P.filter(p=>p.joined).map(p=>({id:p.id,name:p.name,color:p.color})),gen:{busy:GEN.busy,err:GEN.err,steps:GEN.steps.slice(-6)},
+    players:P.filter(p=>p.joined&&(online(p)||p.id===pid)).map(p=>({id:p.id,name:p.name,color:p.color})),gen:{busy:GEN.busy,err:GEN.err,steps:GEN.steps.slice(-6)},
     playing:PLAYING,shown:K.shown,waiting:K.waiting,elapsed:elapsed(),run:!!K.runAt,flash:K.flash?{ok:K.flash.ok,by:K.flash.by,t:K.flash.t,next:K.flash.next,v:K.flash.v}:null};
   if(plan){s.case={titel:C.titel,ort:C.ort,datum:C.datum,einleitung:C.einleitung,ermittler:C.ermittler.name,opfer:C.opfer,nk:C.kapitel.length,
       personen:C.personen.map(p=>({id:p.id,name:p.name,alter:p.alter,rolle:p.rolle,beschreibung:p.beschreibung,verdaechtig:p.verdaechtig}))};
@@ -790,11 +796,14 @@ function hostNet(){
   try{localStorage.setItem('ck_room',JSON.stringify({code:ROOM,at:now()}))}catch(e){}
   const peer=NET.peer=new Peer(peerId(ROOM));
   peer.on('open',()=>{NET.everOpen=true;renderTV()});
+  if(!hostNet.watch){hostNet.watch=setInterval(()=>{const sig=onlineP().map(p=>p.id).join(',');if(sig!==hostNet.sig){hostNet.sig=sig;renderTV();pushAll()}},5000)}
   peer.on('connection',conn=>{
     conn.on('data',d=>{if(!d||typeof d!=='object')return;
+      {const q=P[conn.pid];if(q&&NET.conns[conn.pid]===conn){const back=q.joined&&!online(q);q.seen=Date.now();if(back){renderTV();pushAll()}}}
+      if(d.t==='hb')return;
       if(d.t==='hello'&&typeof d.cid==='string'){let pid=NET.cids[d.cid];
         if(pid==null){pid=P.length;if(pid>=6){try{conn.send({t:'full'})}catch(e){}return}P.push({id:pid,name:'',joined:false,color:COLORS[pid]});NET.cids[d.cid]=pid}
-        const old=NET.conns[pid];NET.conns[pid]=conn;conn.pid=pid;if(old&&old!==conn){try{old.close()}catch(e){}}
+        const old=NET.conns[pid];NET.conns[pid]=conn;conn.pid=pid;P[pid].seen=Date.now();if(old&&old!==conn){try{old.close()}catch(e){}}
         tell(pid,{t:'welcome',pid,room:ROOM});tell(pid,{t:'state',s:pubState(pid)});savePlayers()}
       else if(d.t==='msg'&&conn.pid!=null&&NET.conns[conn.pid]===conn&&d.m&&typeof d.m.type==='string'){handle(conn.pid,d.m);if(d.m.type==='join')savePlayers()}});
     conn.on('close',()=>{if(NET.conns[conn.pid]===conn)delete NET.conns[conn.pid]});conn.on('error',()=>{})});
@@ -825,6 +834,7 @@ function phoneNet(){
 function dial(){const peer=NET.peer;if(!peer||!peer.open)return;NET.dialAt=now();if(NET.conn){try{NET.conn.close()}catch(e){}}
   const conn=NET.conn=peer.connect(peerId(ROOM),{reliable:true,serialization:'json'});
   conn.on('open',()=>{try{conn.send({t:'hello',cid:NET.cid})}catch(e){}});
+  if(!dial.hb)dial.hb=setInterval(()=>{const c=NET.conn;if(c&&c.open){try{c.send({t:'hb'})}catch(e){}}},5000);
   conn.on('data',d=>{if(!d||NET.conn!==conn)return;
     if(d.t==='welcome'){ME=d.pid;$('#net').classList.add('hide');if(ph.name&&ST===null)setTimeout(()=>{if(ST&&!ST.players.some(p=>p.id===ME))send({type:'join',name:ph.name})},300)}
     else if(d.t==='full')netMsg('<div style="font-size:50px">🚪</div><div>Der Raum ist voll (höchstens 6).</div>');
@@ -843,7 +853,7 @@ function renderPhone(){
   if(!joined){h=`<div class="pbody"><div class="center"><div class="big">🕵️</div><h2 style="color:var(--txt);margin:8px 0">Couch-Krimi</h2>Wie heißt du, Ermittler?</div>
     <input class="in" id="nm" maxlength="16" placeholder="Dein Name" value="${esc(ph.name)}"><button class="btn" data-a="join">Beitreten</button></div>`;
     root.innerHTML=h;return}
-  const top=`<div class="ptop"><span class="t">${s.case?'🗂️ '+esc(s.case.titel):'🕵️ Couch-Krimi'}</span>${['play','accuse'].includes(s.phase)?`<span class="tm" id="ptm">${fmtT(s.elapsed)}</span>`:''}</div>`;
+  const top=`<div class="ptop"><span class="t">${s.case?'🗂️ '+esc(s.case.titel):'🕵️ Couch-Krimi'}</span>${['play','accuse'].includes(s.phase)?`<span class="tm" id="ptm">${fmtT(s.elapsed)}</span>`:''}${joined&&!isHost?`<button class="claim ${ph.confirm==='claim'?'on':''}" data-a="claim">${ph.confirm==='claim'?'Sicher? Tippen':'👑 Spielleiter werden'}</button>`:''}</div>`;
   if(['lobby','gen','ready'].includes(s.phase)){
     if(!isHost){h=`<div class="pbody"><div class="center"><div class="big">${s.phase==='lobby'?'⏳':'📝'}</div>${s.phase==='lobby'?'Warte, bis der Gastgeber einen Fall erstellt …':s.phase==='gen'?'Die KI schreibt gerade euren Fall …':'Der Fall ist bereit – gleich geht es los!'}</div>${genList(s)}</div>`}
     else if(s.phase==='lobby'){const wish=ph.wish!=null?ph.wish:s.wish;
@@ -936,7 +946,8 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b
     case 'acc':ph.acc[b.dataset.k]=v;renderPhone();break;
     case 'accuse':{const sel=$('#bew');if(sel)ph.acc.beweis=sel.value;if(twice('accuse'))send({type:'accuse',...ph.acc});break}
     case 'playSol':send({type:'play',id:'sol'});break;
-    case 'newGame':send({type:'newGame'});break}});
+    case 'newGame':send({type:'newGame'});break
+    case 'claim':if(twice('claim'))send({type:'claimHost'});break}});
 document.addEventListener('input',e=>{if(e.target.id==='wish')ph.wish=e.target.value;if(e.target.id==='code')ph.code=e.target.value});
 document.addEventListener('change',e=>{if(e.target.id==='bew'){ph.acc.beweis=e.target.value;renderPhone()}});
 document.addEventListener('focusout',e=>{if(MODE==='phone'&&e.target.id==='wish'&&ph.wish!=null&&ST&&ph.wish!==ST.wish)send({type:'wish',v:ph.wish});setTimeout(renderPhone,50)});
