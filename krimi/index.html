@@ -51,6 +51,7 @@ button{font:inherit;cursor:pointer}
 .doc.foto{background:#fdfdfb;padding:1em 1em 1.4em;font-family:Caveat,cursive}
 .doc.foto img{width:100%;display:block;border-radius:2px;background:#222}
 .doc.foto .cap{font-size:1.4em;margin-top:.4em}
+.doc.foto .cred{font:11px/1.3 Inter,sans-serif;color:#8a8f9c;margin-top:.5em}
 .doc.foto .ph{aspect-ratio:4/3;background:repeating-linear-gradient(45deg,#2d3038,#2d3038 12px,#33373f 12px,#33373f 24px);color:#cfd3dc;display:flex;align-items:center;justify-content:center;text-align:center;padding:1.5em;font-family:Inter,sans-serif;font-size:.9em}
 .doc.audio{background:#202530;color:var(--txt);font-family:Inter,sans-serif}
 .doc.audio .sub{color:var(--mute)}
@@ -206,7 +207,7 @@ label.l{display:block;color:var(--mute);font-size:13px;font-weight:600;margin:16
    Der Fernseher schreibt mit Gemini den Fall (Fallplan → Kapitel → Fotos → Stimmen), hält den Spielstand
    und speichert alles in IndexedDB, damit ein Neuladen den Fall nicht beendet.
    ===================================================================== */
-const APPV='2026-11-15k5';
+const APPV='2026-11-15k6';
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const now=()=>Date.now();
@@ -320,6 +321,27 @@ async function genImage(prompt){
         if(e.code==='rate_limited'){GEM.dead.add(m.n);break}break}}}
   throw last||new Error('Bild fehlgeschlagen')}
 
+/* ---------- Freie Fotos (Wikimedia Commons) statt KI-Bildern: kein KI-Aufruf ---------- */
+const stripTags=h=>{const d=document.createElement('div');d.innerHTML=String(h||'');return (d.textContent||'').replace(/\s+/g,' ').trim()};
+async function commons(q){
+  const u='https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrnamespace=6&gsrlimit=12&gsrsearch='+
+    encodeURIComponent(q+' filetype:bitmap')+'&prop=imageinfo&iiprop=url|size|mime|extmetadata&iiurlwidth=1280&iiextmetadatafilter=Artist|LicenseShortName';
+  const r=await fetch(u);if(!r.ok)return [];const d=await r.json();
+  return Object.values((d.query&&d.query.pages)||{}).sort((a,b)=>(a.index||0)-(b.index||0)).map(p=>({t:p.title,i:(p.imageinfo||[])[0]}))
+    .filter(x=>x.i&&/jpe?g|png|webp/.test(x.i.mime||'')&&x.i.width>=640&&x.i.height>=400&&x.i.width<=x.i.height*2.6&&!/logo|map|karte|plan|diagram|flag|wappen|coat of arms|icon|svg|chart|portrait/i.test(x.t))}
+async function findPhoto(b){
+  const words=String(b.suche||b.bild||b.titel||'').replace(/[^\p{L}\p{N} ]/gu,' ').split(/\s+/).filter(Boolean);
+  const ort=String(C.ort||'').split(/[,·]/)[0].trim();
+  const qs=[words.slice(0,4).join(' '),words.slice(0,2).join(' '),ort&&words[0]?ort+' '+words[0]:'',ort].filter((q,i,a)=>q&&a.indexOf(q)===i);
+  const used=new Set(C.kapitel.flatMap(c=>c.beweise).map(x=>x.photoFile).filter(Boolean));
+  for(const q of qs){let hits=[];try{hits=await commons(q)}catch(e){}
+    const h=hits.find(x=>!used.has(x.t));if(!h)continue;
+    try{const r=await fetch(h.i.thumburl||h.i.url);if(!r.ok)continue;const bl=await shrink(await r.blob());
+      const md=h.i.extmetadata||{};b.photoFile=h.t;
+      b.credit=`Foto: ${stripTags(md.Artist&&md.Artist.value).slice(0,60)||'unbekannt'} · ${stripTags(md.LicenseShortName&&md.LicenseShortName.value)||'freie Lizenz'} · Wikimedia Commons`;
+      return bl}catch(e){}}
+  throw new Error('kein passendes freies Foto gefunden')}
+
 /* ---------- Stimmen ---------- */
 const VOICES={w:['Kore','Aoede','Leda','Despina','Sulafat','Callirrhoe','Erinome','Laomedeia','Achernar','Gacrux','Vindemiatrix','Pulcherrima'],
   m:['Charon','Orus','Puck','Fenrir','Iapetus','Algieba','Umbriel','Enceladus','Schedar','Achird','Sadaltager','Rasalgethi']};
@@ -407,7 +429,7 @@ Felder je Typ (zusätzlich immer "id","typ","titel","untertitel" (Aktenzeichen/A
 - webseite: "url" (erfunden, z. B. www.hotel-dunas-mar.es/team),"seite" (Name der Seite),"art" (Firmenseite, Profil, Bewertungen, Blog, Shop …),"ueberschrift","abschnitte":[{"titel":"…","text":"…"}] (2–4),"kommentare":[{"von":"…","zeit":"…","t":"…","sterne":0-5}] (0–5, sterne nur bei Bewertungen)
 - liste: "spalten":["…"],"zeilen":[["…"]] (6–14 Zeilen),"text" optional
 - bericht: "felder":[{"k":"…","v":"…"}],"text"
-- foto: "bild": detaillierte Bildbeschreibung auf ENGLISCH für einen Bildgenerator (fotorealistisches Beweisfoto: Gegenstand/Ort, Perspektive, Licht; keine Menschen, kein Blut, keine Schrift), "text": Beschriftung der Spurensicherung auf Deutsch (1–3 Sätze, was zu sehen ist, inkl. aller Details, die man zum Lösen braucht)
+- foto: "suche": 2–4 ENGLISCHE Suchbegriffe für ein echtes, frei lizenziertes Foto auf Wikimedia Commons, das den Ort oder Gegenstand allgemein zeigt (z. B. "Maspalomas dunes", "hotel parking lot night", "broken wine glass"; real existierende Orte bevorzugt, keine Personen), "bild": kurze englische Bildbeschreibung, "text": Beschriftung der Spurensicherung auf Deutsch (1–3 Sätze, was auf DIESEM Beweisfoto zu sehen ist, inkl. aller Details, die man zum Lösen braucht – das echte Foto zeigt nur die Umgebung)
 - audio: "art" (z. B. Notruf, Mailbox, Mitschnitt),"stil": Regieanweisung für die Sprecher (z. B. "aufgeregt, flüsternd"),"sprecher":[{"name":"…","geschlecht":"w"}] (1–2),"zeilen":[{"s":"Name","t":"…"}] (insgesamt höchstens 130 Wörter)
 - karte: "orte":[{"name":"…","lat":27.75,"lon":-15.57,"notiz":"…"}] (4–8 echte Orte mit korrekten Koordinaten)
 Texte 80–220 Wörter. Antworte ausschließlich mit JSON: {"beweise":[…]}`}
@@ -486,7 +508,7 @@ async function generate(){
       // Fotos und Tonaufnahmen dieses Kapitels
       for(const b of ch.beweise){
         if(b.typ==='foto'&&!b.media){step('m'+b.id,`Foto „${b.titel}“`,'now');
-          try{const bl=await genImage(b.bild||b.text||b.titel);await DB.set('img:'+b.id,bl);IMG[b.id]=URL.createObjectURL(bl);b.media='ok';step('m'+b.id,`Foto „${b.titel}“`,'ok')}
+          try{const bl=await findPhoto(b);await DB.set('img:'+b.id,bl);IMG[b.id]=URL.createObjectURL(bl);b.media='ok';step('m'+b.id,`Foto „${b.titel}“`,'ok')}
           catch(e){b.media='x';b.mediaErr=shortErr(e);step('m'+b.id,`Foto „${b.titel}“ nur als Beschreibung (${shortErr(e)})`,'bad')}
           await saveCase()}
         if(b.typ==='audio'&&!b.media){step('m'+b.id,`Tonaufnahme „${b.titel}“`,'now');
@@ -527,7 +549,7 @@ function cleanEv(b){const s=v=>v==null?'':String(v).slice(0,4000),arr=v=>Array.i
       kommentare:arr(b.kommentare).filter(k=>k&&k.t).slice(0,8).map(k=>({von:s(k.von).slice(0,40),zeit:s(k.zeit).slice(0,30),t:s(k.t),sterne:Math.max(0,Math.min(5,Math.round(+k.sterne||0)))}))});break;
     case 'liste':o.spalten=arr(b.spalten).map(s).slice(0,8);o.zeilen=arr(b.zeilen).filter(Array.isArray).slice(0,30).map(r=>r.map(s).slice(0,8));o.text=s(b.text);break;
     case 'bericht':o.felder=arr(b.felder).filter(f=>f&&f.k).slice(0,20).map(f=>({k:s(f.k).slice(0,60),v:s(f.v)}));o.text=s(b.text);break;
-    case 'foto':o.bild=s(b.bild).slice(0,1500);o.text=s(b.text);break;
+    case 'foto':o.bild=s(b.bild).slice(0,1500);o.suche=s(b.suche).slice(0,80);o.text=s(b.text);break;
     case 'audio':Object.assign(o,{art:s(b.art),stil:s(b.stil).slice(0,200),sprecher:arr(b.sprecher).slice(0,4).map(x=>({name:s(x&&x.name).slice(0,40),geschlecht:/^(w|f)/i.test((x&&x.geschlecht)||'')?'w':'m'})),zeilen:arr(b.zeilen).filter(z=>z&&z.t).slice(0,30).map(z=>({s:s(z.s).slice(0,40),t:s(z.t)}))});break;
     case 'karte':o.orte=arr(b.orte).filter(x=>x&&isFinite(+x.lat)&&isFinite(+x.lon)).slice(0,10).map(x=>({name:s(x.name).slice(0,60),lat:+x.lat,lon:+x.lon,notiz:s(x.notiz).slice(0,200)}));o.text=s(b.text);break;
     default:o.text=s(b.text||b.plan)}
@@ -565,7 +587,7 @@ function docHTML(b,{img='',playing=false,heard=true}={}){
     case 'zeitung':return `<div class="doc zeitung"><div class="zt">${esc(b.zeitung||'Tageblatt')}</div><div class="sub">${esc(b.datum)}</div><h3>${esc(b.ueberschrift||b.titel)}</h3>${P(b.text)}</div>`;
     case 'liste':return `<div class="doc liste">${head}<table><tr>${(b.spalten||[]).map(c=>`<th>${esc(c)}</th>`).join('')}</tr>${(b.zeilen||[]).map(r=>`<tr>${r.map(c=>`<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</table>${P(b.text)}</div>`;
     case 'bericht':return `<div class="doc bericht"><div class="stamp">VERTRAULICH</div>${head}<div class="kv">${(b.felder||[]).map(f=>`<b>${esc(f.k)}</b><span>${esc(f.v)}</span>`).join('')}</div>${P(b.text)}</div>`;
-    case 'foto':return `<div class="doc foto">${img?`<img src="${img}" alt="">`:`<div class="ph">${b.media==='x'?'📷 Foto nicht verfügbar – siehe Beschreibung der Spurensicherung':'📷 Foto wird geladen …'}</div>`}<div class="cap">${esc(b.titel)}${b.text?' – '+esc(b.text):''}</div></div>`;
+    case 'foto':return `<div class="doc foto">${img?`<img src="${img}" alt="">`:`<div class="ph">${b.media==='x'?'📷 Foto nicht verfügbar – siehe Beschreibung der Spurensicherung':'📷 Foto wird geladen …'}</div>`}<div class="cap">${esc(b.titel)}${b.text?' – '+esc(b.text):''}</div>${b.credit&&img?`<div class="cred">${esc(b.credit)}</div>`:''}</div>`;
     case 'audio':return `<div class="doc audio">${head}<div class="wave ${playing?'on':''}">${Array.from({length:40},(_,i)=>`<i style="animation-delay:${(i*37%100)/100}s"></i>`).join('')}</div>
       ${heard?(b.zeilen||[]).map(z=>`<div class="line"><b>${esc(z.s)}:</b> ${esc(z.t)}</div>`).join(''):`<div class="lock">${b.media==='x'?'':'🎧 Abschrift erscheint, sobald die Aufnahme einmal am Fernseher lief.'}</div>`}
       ${b.media==='x'?`<div class="lock" style="color:var(--mute)">(Tonaufnahme nicht verfügbar – hier die Abschrift)</div>`:''}</div>`;
@@ -696,7 +718,7 @@ function renderTV(){
     ${ROOM?`<div class="pill">Raum <b>${ROOM}</b></div>`:''}</div>`;
   let body='';
   if(['lobby','gen','ready'].includes(K.phase)){
-    const right=K.phase==='lobby'?`<h1>Ein Fall für euch.</h1><p class="lead">Scannt den Code mit euren Handys. Der Gastgeber beschreibt den Fall – z. B. „Mord auf Gran Canaria“ oder „Skandal in Stuttgart“ – und die KI schreibt Akten, Beweisfotos und Tonaufnahmen. Ermittelt gemeinsam, ca. 1 Stunde.</p>`
+    const right=K.phase==='lobby'?`<h1>Ein Fall für euch.</h1><p class="lead">Scannt den Code mit euren Handys. Der Gastgeber beschreibt den Fall – z. B. „Mord auf Gran Canaria“ oder „Skandal in Stuttgart“ – und die KI schreibt Akten und Tonaufnahmen, dazu passende Fotos. Ermittelt gemeinsam, ca. 1 Stunde.</p>`
       :`<div class="card casecard">${C&&C.plan?`<h2>${esc(C.titel)}</h2><div class="meta">📍 ${esc(C.ort)} · ${esc(C.datum)}</div>`:`<h2>Neuer Fall</h2><div class="meta">„${esc(C?C.wish:K.wish)}“</div>`}
         ${stepsHTML()}${K.phase==='ready'?`<div class="hintline">🔎 Kapitel 1 ist bereit – der Gastgeber startet die Ermittlung. Der Rest entsteht, während ihr ermittelt.</div>`:''}
         ${GEN.err&&!GEN.busy?`<div class="hintline" style="color:var(--red)">Der Gastgeber kann es am Handy erneut versuchen.</div>`:''}</div>`;
