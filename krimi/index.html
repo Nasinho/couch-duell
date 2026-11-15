@@ -207,7 +207,7 @@ label.l{display:block;color:var(--mute);font-size:13px;font-weight:600;margin:16
    Der Fernseher schreibt mit Gemini den Fall (Fallplan → Kapitel → Fotos → Stimmen), hält den Spielstand
    und speichert alles in IndexedDB, damit ein Neuladen den Fall nicht beendet.
    ===================================================================== */
-const APPV='2026-11-15k6';
+const APPV='2026-11-15k7';
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const now=()=>Date.now();
@@ -668,7 +668,7 @@ function pubEv(b){const o={...b};delete o.plan;delete o.bild;if(b.typ==='audio'&
 async function sendImg(pid,id){
   const src=await DB.get('img:'+id);if(!src)return;const sm=await shrink(src,900,.72);
   const url=await new Promise(ok=>{const r=new FileReader();r.onload=()=>ok(r.result);r.readAsDataURL(sm)});
-  const n=Math.ceil(url.length/48000);for(let i=0;i<n;i++)tell(pid,{t:'img',id,i,n,d:url.slice(i*48000,(i+1)*48000)})}
+  const CH=12000,n=Math.ceil(url.length/CH);for(let i=0;i<n;i++){tell(pid,{t:"img",id,i,n,d:url.slice(i*CH,(i+1)*CH)});if(i%4===3)await sleep(30)}}
 
 /* ---------- Ton am Fernseher ---------- */
 let PLAYING=null;
