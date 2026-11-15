@@ -207,7 +207,7 @@ label.l{display:block;color:var(--mute);font-size:13px;font-weight:600;margin:16
    Der Fernseher schreibt mit Gemini den Fall (Fallplan → Kapitel → Fotos → Stimmen), hält den Spielstand
    und speichert alles in IndexedDB, damit ein Neuladen den Fall nicht beendet.
    ===================================================================== */
-const APPV='2026-11-15k7';
+const APPV='2026-11-15k8';
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const now=()=>Date.now();
@@ -263,7 +263,7 @@ async function listModels(){
 async function gemCall(model,body,{stream=false,idle=90000,method='generateContent'}={}){
   GEM.last=model;
   const url=`${API}models/${encodeURIComponent(model)}:${method==='generateContent'&&stream?'streamGenerateContent?alt=sse&':method+'?'}key=${encodeURIComponent(GEM.key)}`;
-  const ctl=new AbortController();let why='',t=null;const arm=()=>{clearTimeout(t);t=setTimeout(()=>{why=`keine Antwort nach ${idle/1000} s`;ctl.abort()},idle)};
+  const ctl=GEN.ctl=new AbortController();let why='',t=null;const arm=()=>{clearTimeout(t);t=setTimeout(()=>{why=`keine Antwort nach ${idle/1000} s`;ctl.abort()},idle)};
   try{arm();let res;
     try{res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:ctl.signal})}
     catch(e){throw Object.assign(new Error(why||e.message||'Netzwerkfehler'),{code:'error'})}
@@ -282,8 +282,8 @@ const partsOf=d=>(d&&d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.c
 const parseLoose=t=>{try{return JSON.parse(t)}catch(e){const m=String(t).match(/\{[\s\S]*\}/);if(!m)return null;try{return JSON.parse(m[0])}catch(e2){return null}}};
 // JSON-Antwort, nacheinander über die Modell-Liste; bei „zu viele Anfragen“ kurz warten
 async function askJSON(prompt,{think=false,tries=4}={}){
-  let last;
-  for(let a=0;a<tries;a++){
+  let last;const ep=GEN.epoch;
+  for(let a=0;a<tries;a++){if(ep!==GEN.epoch)throw ABORT;
     const list=alive(GEM.text);if(!list.length)throw last||new Error('Tageskontingent der Textmodelle aufgebraucht');
     const model=list[a%list.length];
     const cfg={responseMimeType:'application/json',...(think?{}:{thinkingConfig:{thinkingBudget:0}})};
@@ -362,8 +362,8 @@ async function ttsPart(lines,people,stil){
     speech={voiceConfig:{prebuiltVoiceConfig:{voiceName:voiceFor(names[0],(people[names[0]]||{}).g)}}}}
   else{text=`Lies dieses Gespräch auf Deutsch vor${stil?` (${stil})`:''}:\n`+lines.map(l=>`${tag(l.s)}: ${l.t}`).join('\n');
     speech={multiSpeakerVoiceConfig:{speakerVoiceConfigs:names.map(n=>({speaker:tag(n),voiceConfig:{prebuiltVoiceConfig:{voiceName:voiceFor(n,(people[n]||{}).g)}}}))}}}
-  let last;
-  for(let a=0;a<3;a++){const tl=alive(GEM.tts);if(!tl.length)throw last||Object.assign(new Error('Sprachkontingent für diesen Key aufgebraucht'),{code:'no_model'});
+  let last;const ep=GEN.epoch;
+  for(let a=0;a<3;a++){if(ep!==GEN.epoch)throw ABORT;const tl=alive(GEM.tts);if(!tl.length)throw last||Object.assign(new Error('Sprachkontingent für diesen Key aufgebraucht'),{code:'no_model'});
     const m=tl[a%tl.length];
     try{const d=await gemCall(m,{contents:[{role:'user',parts:[{text}]}],generationConfig:{responseModalities:['AUDIO'],speechConfig:speech}},{idle:150000});
       const p=partsOf(d).find(x=>x.inlineData||x.inline_data),id=p&&(p.inlineData||p.inline_data);
@@ -434,7 +434,7 @@ Felder je Typ (zusätzlich immer "id","typ","titel","untertitel" (Aktenzeichen/A
 - karte: "orte":[{"name":"…","lat":27.75,"lon":-15.57,"notiz":"…"}] (4–8 echte Orte mit korrekten Koordinaten)
 Texte 80–220 Wörter. Antworte ausschließlich mit JSON: {"beweise":[…]}`}
 
-const GEN={busy:false,steps:[],chars:0,err:'',errAt:0};
+const GEN={busy:false,steps:[],chars:0,err:'',errAt:0,epoch:0,ctl:null};const ABORT=new Error('abgebrochen');
 let C=null;               // der Fall (Plan + geschriebene Kapitel), nur am Fernseher
 const IMG={},AUD={};      // Objekt-URLs der Fotos/Tonaufnahmen
 function genTick(){if(MODE==='tv'){clearTimeout(genTick.t);genTick.t=setTimeout(()=>{renderTV();pushAll()},400)}}
@@ -480,48 +480,48 @@ const evText=b=>[b.titel,b.untertitel,b.datum,b.text,b.von,b.an,b.betreff,b.uebe
 async function saveCase(){if(C)await DB.set('case',C)}
 async function saveProg(){await DB.set('prog',{...K,toast:null,playing:null})}
 async function generate(){
-  if(GEN.busy||!C)return;GEN.busy=true;GEN.err='';
+  if(GEN.busy||!C)return;GEN.busy=true;GEN.err='';const ep=GEN.epoch,chk=()=>{if(ep!==GEN.epoch)throw ABORT};
   try{
     if(!C.plan){
       step('plan','Fallplan wird entworfen','now');
       let p,why='';
-      for(let a=0;a<3;a++){p=await askJSON(planPrompt(C.wish,C.min,C.level),{think:true,tries:3});why=checkPlan(p);if(!why)break;step('plan',`Fallplan unvollständig (${why}) – neuer Versuch`,'now')}
+      for(let a=0;a<3;a++){p=await askJSON(planPrompt(C.wish,C.min,C.level),{think:true,tries:3});chk();why=checkPlan(p);if(!why)break;step('plan',`Fallplan unvollständig (${why}) – neuer Versuch`,'now')}
       if(why)throw new Error('Fallplan unbrauchbar: '+why);
       Object.assign(C,fixPlan(p));C.plan=true;
-      C.kapitel.forEach((c,i)=>{c.written=false;c.ready=false});await saveCase();
-      step('plan',`Fallplan: „${C.titel}“`,'ok');K.marks=Object.fromEntries(C.personen.filter(p=>p.verdaechtig).map(p=>[p.id,'q']));saveProg()}
+      C.kapitel.forEach((c,i)=>{c.written=false;c.ready=false});(chk(),await saveCase());
+      step('plan',`Fallplan: „${C.titel}“`,'ok');K.marks=Object.fromEntries(C.personen.filter(p=>p.verdaechtig).map(p=>[p.id,'q']));(chk(),saveProg())}
     // Einsatzbefehl als Ansage der Kommissarin
     if(!C.briefAud){step('brief','Einsatzbefehl wird eingesprochen','now');
       try{AUD.brief=URL.createObjectURL(await genAudioStore('aud:brief',[{s:C.ermittler.name,t:C.einleitung}],{[C.ermittler.name]:{g:C.ermittler.geschlecht}},'ernst, ruhig, wie eine Kommissarin beim Einsatzbefehl'));C.briefAud=true;step('brief','Einsatzbefehl eingesprochen','ok')}
-      catch(e){C.briefAud='x';step('brief','Einsatzbefehl nur als Text ('+shortErr(e)+')','bad')}
-      await saveCase()}
+      catch(e){chk();C.briefAud='x';step('brief','Einsatzbefehl nur als Text ('+shortErr(e)+')','bad')}
+      (chk(),await saveCase())}
     for(let k=0;k<C.kapitel.length;k++){const ch=C.kapitel[k];
       if(!ch.written){step('k'+k,`Kapitel ${k+1}: Beweise werden geschrieben`,'now');
         const prev=C.kapitel.slice(0,k).flatMap(c=>c.beweise).map(b=>`[${b.id}] ${evText(b)}`).join('\n\n').slice(0,24000);
         let got=null;
-        for(let a=0;a<2&&!got;a++){const r=await askJSON(chapterPrompt(C,k,prev),{tries:3});const list=r&&Array.isArray(r.beweise)?r.beweise:Array.isArray(r)?r:[];
+        for(let a=0;a<2&&!got;a++){const r=await askJSON(chapterPrompt(C,k,prev),{tries:3});chk();const list=r&&Array.isArray(r.beweise)?r.beweise:Array.isArray(r)?r:[];
           if(list.length>=Math.min(2,ch.beweise.length))got=list}
         if(!got)throw new Error(`Kapitel ${k+1} kam leer zurück`);
         ch.beweise=ch.beweise.map(b=>{const w=got.find(x=>x&&x.id===b.id)||got[ch.beweise.indexOf(b)]||{};
           return cleanEv({...w,id:b.id,typ:ICON[w.typ]?w.typ:b.typ,titel:w.titel||b.titel,ch:k,plan:b.inhalt})});
-        ch.written=true;await saveCase();step('k'+k,`Kapitel ${k+1}: ${ch.beweise.length} Beweise geschrieben`,'ok')}
+        ch.written=true;(chk(),await saveCase());step('k'+k,`Kapitel ${k+1}: ${ch.beweise.length} Beweise geschrieben`,'ok')}
       // Fotos und Tonaufnahmen dieses Kapitels
       for(const b of ch.beweise){
         if(b.typ==='foto'&&!b.media){step('m'+b.id,`Foto „${b.titel}“`,'now');
           try{const bl=await findPhoto(b);await DB.set('img:'+b.id,bl);IMG[b.id]=URL.createObjectURL(bl);b.media='ok';step('m'+b.id,`Foto „${b.titel}“`,'ok')}
-          catch(e){b.media='x';b.mediaErr=shortErr(e);step('m'+b.id,`Foto „${b.titel}“ nur als Beschreibung (${shortErr(e)})`,'bad')}
-          await saveCase()}
+          catch(e){chk();b.media='x';b.mediaErr=shortErr(e);step('m'+b.id,`Foto „${b.titel}“ nur als Beschreibung (${shortErr(e)})`,'bad')}
+          (chk(),await saveCase())}
         if(b.typ==='audio'&&!b.media){step('m'+b.id,`Tonaufnahme „${b.titel}“`,'now');
           const people={};(b.sprecher||[]).forEach(s=>people[s.name]={g:s.geschlecht});
           try{AUD[b.id]=URL.createObjectURL(await genAudioStore('aud:'+b.id,b.zeilen,people,b.stil));b.media='ok';step('m'+b.id,`Tonaufnahme „${b.titel}“`,'ok')}
-          catch(e){b.media='x';b.mediaErr=shortErr(e);step('m'+b.id,`Tonaufnahme „${b.titel}“ nur als Abschrift (${shortErr(e)})`,'bad')}
-          await saveCase()}}
-      ch.ready=true;await saveCase();
-      if(k===0&&K.phase==='gen'){K.phase='ready';saveProg()}
+          catch(e){chk();b.media='x';b.mediaErr=shortErr(e);step('m'+b.id,`Tonaufnahme „${b.titel}“ nur als Abschrift (${shortErr(e)})`,'bad')}
+          (chk(),await saveCase())}}
+      ch.ready=true;(chk(),await saveCase());
+      if(k===0&&K.phase==='gen'){K.phase='ready';(chk(),saveProg())}
       if(K.waiting&&K.ch===k){K.waiting=false;unlockChapter(k)}
       pushAll();renderTV()}
-  }catch(e){GEN.err=shortErr(e);GEN.errAt=now();step('err','Fehler: '+GEN.err,'bad')}
-  finally{GEN.busy=false;renderTV();pushAll()}}
+  }catch(e){if(ep!==GEN.epoch)return;GEN.err=shortErr(e);GEN.errAt=now();step('err','Fehler: '+GEN.err,'bad')}
+  finally{if(ep===GEN.epoch){GEN.busy=false;renderTV();pushAll()}}}
 // Auflösung erst einsprechen, wenn wirklich angeklagt wurde (spart den Aufruf bei abgebrochenen Spielen)
 let SOLBUSY=false;
 async function solAudio(){
@@ -686,7 +686,7 @@ async function newCase(){
   C={wish:K.wish.trim(),min:K.min,level:K.level,plan:false,kapitel:[]};
   Object.assign(K,{phase:'gen',ch:0,unlocked:[],heard:[],hints:{},wrong:{},solved:[],shown:null,marks:{},elapsed:0,runAt:0,waiting:false,result:null,flash:null});
   GEN.steps=[];await saveCase();await saveProg();generate()}
-async function discardCase(){stopAudio();await DB.clear();C=null;GEN.steps=[];GEN.err='';
+async function discardCase(){GEN.epoch++;GEN.busy=false;try{GEN.ctl&&GEN.ctl.abort()}catch(e){}stopAudio();await DB.clear();C=null;GEN.steps=[];GEN.err='';GEN.chars=0;
   Object.assign(K,{phase:'lobby',ch:0,unlocked:[],heard:[],hints:{},wrong:{},solved:[],shown:null,marks:{},elapsed:0,runAt:0,waiting:false,result:null,flash:null});renderTV();pushAll()}
 async function resume(){
   const c=await DB.get('case'),pr=await DB.get('prog');if(!c)return;C=c;
@@ -859,7 +859,7 @@ function renderPhone(){
       <button class="btn sec small" data-a="discard" style="margin-top:24px">${ph.confirm==='discard'?'Wirklich verwerfen?':'Fall verwerfen'}</button></div>`}
     root.innerHTML=top+h;return}
   if(s.phase==='briefing'){h=`<div class="pbody"><div class="center"><div class="big">🚨</div><h2 style="color:var(--txt)">Einsatzbefehl</h2></div><div class="doc" style="font-size:15px">${esc(s.case.einleitung)}</div>
-    ${isHost?`<button class="btn" data-a="toFile">Zur Fallakte</button>`:'<div class="note">Hört zu – gleich geht es los.</div>'}</div>`;root.innerHTML=top+h;return}
+    ${isHost?`<button class="btn" data-a="toFile">Zur Fallakte</button><button class="btn sec small" data-a="discard" style="margin-top:28px">${ph.confirm==='discard'?'Wirklich beenden? Der Fall wird gelöscht.':'🏁 Fall beenden'}</button>`:'<div class="note">Hört zu – gleich geht es los.</div>'}</div>`;root.innerHTML=top+h;return}
   if(s.phase==='end'){const r=s.result,pk=s.case.personen.find(p=>p.id===r.pick.taeter)||{},tt=s.case.personen.find(p=>p.id===r.taeter)||{};
     h=`<div class="pbody"><div class="center"><div class="big">${r.taeter?'🏆':'🕳️'}</div><h2 style="color:var(--txt);margin:6px 0">${r.taeter?'Fall gelöst!':'Der Täter entkommt …'}</h2><div style="font-size:40px;color:var(--amber);font-weight:800">${r.score} / 100</div></div>
       <div class="note">${r.taeter?`Ihr habt ${esc(pk.name)} überführt.`:`Ihr habt auf ${esc(pk.name)} getippt – es war ${esc(tt.name)}.`} Zeit: ${fmtT(r.elapsed)}</div>
@@ -897,7 +897,8 @@ function renderPhone(){
          :`<label class="l">Antwort</label><input class="in" id="code" maxlength="30" autocomplete="off" placeholder="Code, Zahl oder Wort" value="${esc(ph.code)}">`}
         <button class="btn" data-a="answer">${ph.confirm==='answer'?'Sicher? Nochmal tippen!':'Antwort abgeben'}</button>
         <div class="note">Falsche Antworten kosten 10 Punkte, ein Tipp kostet 5.</div>
-        ${t.more?`<button class="btn sec small" data-a="hint">${ph.confirm==='hint'?'Wirklich einen Tipp nehmen?':'💡 Tipp anzeigen'}</button>`:''}</div>`}}
+        ${t.more?`<button class="btn sec small" data-a="hint">${ph.confirm==='hint'?'Wirklich einen Tipp nehmen?':'💡 Tipp anzeigen'}</button>`:''}</div>`}
+    if(isHost)h=h.replace(/<\/div>$/,`<button class="btn sec small" data-a="discard" style="margin-top:28px">${ph.confirm==='discard'?'Wirklich beenden? Der Fall wird gelöscht.':'🏁 Fall beenden & neuen Fall erstellen'}</button></div>`)}
   if(s.flash){const f=s.flash;h=`<div class="pbody"><div class="center"><div class="big">${f.ok?'✅':'❌'}</div><h2 style="color:var(--txt)">${f.ok?'Richtig!':'Leider falsch'}</h2>${f.ok?esc(f.t)+'<br><br><b style="color:var(--amber)">'+esc(f.next)+'</b>':`„${esc(f.v)}“ passt nicht. −10 Punkte`}</div></div>`}
   const tabs=`<div class="tabs">${[['akte','🗂️','Akte',newEv],['pers','👥','Personen',0],['task','❓',s.phase==='accuse'?'Anklage':'Auftrag',0]].map(([k,i,l,n])=>`<button class="${TAB===k?'on':''}" data-a="tab" data-v="${k}"><span>${i}</span>${l}${n?`<i class="badge">${n}</i>`:''}</button>`).join('')}</div>`;
   root.innerHTML=top+h+tabs;if(renderPhone.tab===TAB+OPEN)scrollTo(0,sy);else scrollTo(0,0);renderPhone.tab=TAB+OPEN}
