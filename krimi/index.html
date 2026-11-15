@@ -207,7 +207,7 @@ label.l{display:block;color:var(--mute);font-size:13px;font-weight:600;margin:16
    Der Fernseher schreibt mit Gemini den Fall (Fallplan → Kapitel → Fotos → Stimmen), hält den Spielstand
    und speichert alles in IndexedDB, damit ein Neuladen den Fall nicht beendet.
    ===================================================================== */
-const APPV='2026-11-15k8';
+const APPV='2026-11-15k9';
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const now=()=>Date.now();
@@ -600,7 +600,9 @@ function docHTML(b,{img='',playing=false,heard=true}={}){
 let K={phase:'lobby',wish:'',min:60,level:'normal',ch:0,unlocked:[],heard:[],hints:{},wrong:{},solved:[],shown:null,scrollAt:0,marks:{},
   elapsed:0,runAt:0,waiting:false,toast:null,result:null,seenBy:{}};
 const P=[];                // Spieler {id,name,color,joined,cid}
-let hostId=null;
+let hostId=null;const BOOT=Date.now();
+// Spielleiter weg (Handy aus / Verbindung verloren)? Dann übernimmt der nächste aktive Spieler – nach dem TV-Start erst nach 20 s, damit sich alle wieder verbinden können
+const hostGone=()=>hostId==null||!P[hostId]||!P[hostId].joined||(!(NET.conns[hostId]&&NET.conns[hostId].open)&&Date.now()-BOOT>20000);
 const host=()=>P.find(p=>p.id===hostId);
 const elapsed=()=>K.elapsed+(K.runAt?now()-K.runAt:0);
 function toast(t){K.toast={t,at:now()};renderTV();setTimeout(()=>{if(K.toast&&now()-K.toast.at>=3900){K.toast=null;renderTV()}},4000)}
@@ -622,11 +624,13 @@ function checkAnswer(a,v){const want=a.typ==='person'?a.antwort:String(a.antwort
 
 /* ---------- Nachrichten der Handys ---------- */
 function handle(pid,m){
-  const p=P[pid];if(!p)return;const isHost=pid===hostId;
+  const p=P[pid];if(!p)return;
+  if(p.joined&&pid!==hostId&&hostGone()){hostId=pid;savePlayers();pushAll()}
+  const isHost=pid===hostId;
   switch(m.type){
     case 'join':{const name=String(m.name||'').trim().slice(0,16);if(!name)return;
       p.name=name;if(!p.joined){p.joined=true;p.color=COLORS[P.filter(x=>x.joined).length-1]||COLORS[pid%COLORS.length]}
-      if(hostId==null||!P[hostId]||!P[hostId].joined)hostId=pid;break}
+      if(hostGone())hostId=pid;break}
     case 'wish':if(!isHost||!['lobby','ready'].includes(K.phase)&&K.phase!=='gen')return;K.wish=String(m.v||'').slice(0,200);try{localStorage.setItem('ck_wish',K.wish)}catch(e){}break;
     case 'opts':if(!isHost||K.phase!=='lobby')return;if(DUR[m.min])K.min=m.min;if(LEVEL[m.level])K.level=m.level;break;
     case 'gemSet':if(!isHost||typeof m.key!=='string'||m.key.length>200)return;setKey(m.key.trim());break;
