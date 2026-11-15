@@ -231,6 +231,7 @@ header p{font-size:13px;color:var(--muted);margin-top:3px}
 .phead{margin:5cqw 5cqw 0;background:var(--pc);color:#fff;border-radius:5cqw;padding:2.4cqw;text-align:center;font-weight:700;font-size:7cqw;text-shadow:0 1px 2px rgba(0,0,0,.3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pbody{flex:1;display:flex;flex-direction:column;padding:4cqw 5cqw 6cqw;gap:3cqw;min-height:0}
 .pscroll{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;align-items:center;gap:2.4cqw;text-align:center;padding-bottom:4cqw}
+.pscroll>*{flex-shrink:0}
 .pc-center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3cqw;text-align:center;min-height:0}
 .pc-center .av{width:38cqw}
 .ptxt{font-size:7.5cqw;line-height:1.2}
@@ -481,7 +482,7 @@ body.mode-phone .pscreen{border-radius:0;padding-top:env(safe-area-inset-top);pa
    Ohne Parameter: Fernseher (zeigt QR-Code, führt das Spiel) · ?r=CODE oder #CODE: Handy-Controller
    ?demo: Prototyp-Ansicht mit Fernseher und vier simulierten Handys auf einer Seite
    ===================================================================== */
-const APPV='2026-11-15c'; // bei Änderungen am Protokoll zwischen Fernseher und Handy hochzählen
+const APPV='2026-11-15d'; // bei Änderungen am Protokoll zwischen Fernseher und Handy hochzählen
 const QS=new URLSearchParams(location.search);
 let ROOM=(QS.get('r')||(/^#[A-Za-z0-9]{4}$/.test(location.hash)?location.hash.slice(1):'')).toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,4);
 const MODE=typeof Peer==='undefined'||QS.has('demo')?'demo':(QS.has('r')||ROOM?'phone':'tv');
@@ -656,7 +657,8 @@ const DE=[[8.66,54.91],[9.43,54.83],[9.9,54.79],[10.03,54.55],[10.2,54.45],[10.7
    ===================================================================== */
 const P=[0,1,2,3].map(i=>({id:i,joined:false,name:'',draftName:'',color:COLORS[[0,3,2,4][i]],hat:HATS[[1,2,3,6][i]],
   score:0,prevScore:0,popAt:0,shakeAt:0,draftGuess:'',draftSay:'',draftPin:null,draftOrder:[],heard:'',micErr:'',listening:false}));
-const S={phase:'lobby',gi:-1,cur:null,hostId:null,decided:false,rem:0,rid:0,target:3,len:6,salt:0,prog:makeProg(6,0),recorded:false,music:'melodien'};
+const S={phase:'lobby',gi:-1,cur:null,hostId:null,decided:false,rem:0,rid:0,target:3,len:6,salt:0,prog:makeProg(6,0),recorded:false,music:'melodien',aiWish:''};
+try{S.aiWish=localStorage.getItem('cd_ai_wish')||'';S.musicSaved=localStorage.getItem('cd_music')||''}catch(e){}
 const queues={};
 // Gedächtnis über mehrere Abende (nur in diesem Browser): gespielte Tage, Siege, schon gestellte Fragen
 let STORE={days:[],wins:{},seen:{}};
@@ -725,7 +727,8 @@ async function aiGenerate(type){
   if(!aiProvider()||!aiOn||AI.state[type]==='loading'||AI.state[type]==='ready')return;
   AI.state[type]='loading';aiStatus();
   try{
-    const res=await askJSON(AI_SPECS[type].prompt(shuffle([...shuffle(MOTTO.t).slice(0,3),...shuffle(THEMES.filter(t=>!MOTTO.t.includes(t))).slice(0,2)]).join(', ')));
+    const wish=S.aiWish?`\n\nWunsch der Spieler für den heutigen Abend: „${S.aiWish}“. Richte Themen, Schwierigkeit und Ton danach aus, halte aber alle Regeln und das Antwortformat oben genau ein.`:'';
+    const res=await askJSON(AI_SPECS[type].prompt(shuffle([...shuffle(MOTTO.t).slice(0,3),...shuffle(THEMES.filter(t=>!MOTTO.t.includes(t))).slice(0,2)]).join(', '))+wish);
     const arr=Array.isArray(res)?res:(res&&Array.isArray(res.items)?res.items:[]);
     const items=arr.filter(x=>{try{return x&&AI_SPECS[type].check(x)}catch(e){return false}}).map(AI_SPECS[type].fix);
     if(items.length>=4){AI.pool[type]=shuffle(items);AI.state[type]='ready'}else AI.state[type]='error';
@@ -733,7 +736,9 @@ async function aiGenerate(type){
   aiStatus();
 }
 // Key kommt im Fernseher-Modus vom Handy des Gastgebers; gespeichert wird er nur am Fernseher
-let AIMSG={t:'',ok:null},AIREMOTE=null;
+let AIMSG={t:'',ok:null},AIREMOTE=null,MUREMOTE=null;
+const muLocal=()=>({ok:DZ.ok,title:DZ.title,msg:MUMSG.t,mok:MUMSG.ok});
+const muInfo=()=>MODE==='phone'?(MUREMOTE||{ok:null,title:'',msg:'',mok:null}):muLocal();
 const aiLocal=()=>({pv:aiProvider(),on:aiOn,denied:AI.denied,has:!!GEM.key,msg:AIMSG.t,ok:AIMSG.ok});
 const aiInfo=()=>MODE==='phone'?(AIREMOTE||{pv:null,on:false,denied:false,has:false,msg:'',ok:null}):aiLocal();
 function setGemKey(key){
@@ -860,7 +865,9 @@ function stopMusic(){if(musicSrc){try{musicSrc.stop()}catch(e){}musicSrc=null}}
    API per JSONP (die API selbst erlaubt kein CORS), MP3s per fetch (CDN erlaubt CORS).
    In der Claude-Vorschau blockiert die Sicherheitsrichtlinie Deezer → automatisch Melodien.
    ===================================================================== */
-const DZ={ok:null,tracks:[],promise:null};
+const DZ={ok:null,tracks:[],promise:null,title:''};let MUMSG={t:'',ok:null};
+const MUSIC_PRESETS=[['melodien','Eingebaute Melodien'],['evergreens','Größte Hits aller Zeiten'],['Top Germany','Top Germany'],['charts','Charts weltweit'],['90er Hits','90er Hits'],['2000er Hits','2000er Hits'],['Schlager','Schlager']];
+const musicName=v=>v==='melodien'?'eingebaute Melodien':'Deezer · '+((MUSIC_PRESETS.find(x=>x[0]===v)||[])[1]||DZ.title||(/^pl:/.test(v)?'eigene Playlist':v));
 function jsonp(url,timeout=8000){return new Promise((res,rej)=>{
   const cb='__dz'+Math.random().toString(36).slice(2),s=document.createElement('script');
   const t=setTimeout(()=>{done();rej(new Error('timeout'))},timeout);
@@ -870,9 +877,12 @@ function jsonp(url,timeout=8000){return new Promise((res,rej)=>{
   s.src=url+(url.includes('?')?'&':'?')+'output=jsonp&callback='+cb;document.head.appendChild(s)})}
 async function dzLoad(mix){
   let tracks;
-  if(mix==='charts')tracks=(await jsonp('https://api.deezer.com/chart/0/tracks?limit=100')).data;
+  if(mix==='charts'){tracks=(await jsonp('https://api.deezer.com/chart/0/tracks?limit=100')).data;DZ.title='Charts weltweit'}
+  else if(/^pl:\d+$/.test(mix)){ // Playlist direkt über ihre Nummer (aus einem Deezer-Link)
+    const pl=await jsonp('https://api.deezer.com/playlist/'+mix.slice(3));if(!pl||pl.error||!pl.id)throw new Error('Playlist nicht gefunden oder privat');
+    DZ.title=pl.title||'';tracks=(await jsonp(`https://api.deezer.com/playlist/${pl.id}/tracks?limit=100`)).data}
   else{const s=await jsonp('https://api.deezer.com/search/playlist?q='+encodeURIComponent(mix)+'&limit=1');
-    const pl=s.data&&s.data[0];if(!pl)throw new Error('Keine Playlist gefunden');
+    const pl=s.data&&s.data[0];if(!pl)throw new Error('Keine Playlist gefunden');DZ.title=pl.title||'';
     tracks=(await jsonp(`https://api.deezer.com/playlist/${pl.id}/tracks?limit=100`)).data}
   tracks=(tracks||[]).filter(t=>t.preview&&t.readable!==false);
   // Nur die bekanntesten Songs der Playlist (Deezer-Beliebtheit "rank")
@@ -957,9 +967,18 @@ function lenientMatch(tt,cand){
   const hits=ct.filter(c=>tt.some(t=>tokMatch(t,c))).length;if(hits/ct.length>=.6)return true;
   const j=ct.join('');return j.length>=6&&lev(tt.join(''),j)<=Math.ceil(j.length*.25)}
 const checkLenient=(texts,syn)=>texts.some(t=>{const tt=toks(t);return tt.length&&syn.some(s=>lenientMatch(tt,s))});
+function setMusic(v){
+  S.music=v;DZ.tracks=[];DZ.promise=null;DZ.title='';try{localStorage.setItem('cd_music',v)}catch(e){}
+  if(v==='melodien'||v==='evergreens'||!DZ.ok){MUMSG={t:'',ok:null};renderAll();musicUI();return}
+  MUMSG={t:'Lade Playlist …',ok:null};renderAll();musicUI();
+  const pr=DZ.promise=dzLoad(v);
+  pr.then(()=>{if(S.music===v)MUMSG={t:`✓ ${DZ.title||v} · ${DZ.tracks.length} Songs`,ok:true}})
+    .catch(e=>{if(S.music===v){MUMSG={t:'✗ '+(e.message||'Fehler beim Laden'),ok:false};DZ.promise=null}})
+    .finally(()=>{if(S.music===v){renderAll();musicUI()}})}
 function musicUI(){
   const sel=$('#music');if(!sel)return;
   sel.querySelectorAll('[data-dz]').forEach(o=>{o.disabled=!DZ.ok;o.textContent=o.textContent.replace(/ \(.*\)$/,'')+(DZ.ok===false?' (hier gesperrt)':'')});
+  if(![...sel.options].some(o=>o.value===S.music)){const o=document.createElement('option');o.value=S.music;o.textContent='Deezer: '+(DZ.title||'eigene Playlist');sel.appendChild(o)}
   sel.value=S.music;sel.disabled=S.phase!=='lobby';
 }
 
@@ -1103,7 +1122,7 @@ const peerId=code=>'couchduell-'+code.toLowerCase();
 function snapshot(){
   let cur=null;
   if(S.cur){cur={...S.cur,r:null};if(S.cur.r){cur.r={...S.cur.r};delete cur.r.clip;delete cur.r.full}}
-  return{V:APPV,S:{...S,cur},PLAY,AI:aiLocal(),P:P.map(p=>({id:p.id,joined:p.joined,name:p.name,color:p.color,hat:p.hat,score:p.score,prevScore:p.prevScore}))}}
+  return{V:APPV,S:{...S,cur},PLAY,AI:aiLocal(),MU:muLocal(),P:P.map(p=>({id:p.id,joined:p.joined,name:p.name,color:p.color,hat:p.hat,score:p.score,prevScore:p.prevScore}))}}
 function tell(i,o){const c=NET.conns[i];if(c&&c.open){try{c.send(o)}catch(e){}}}
 const pushState=i=>tell(i,{t:'state',s:snapshot()});
 
@@ -1127,7 +1146,8 @@ function hostNet(code){
         tell(pid,{t:'welcome',pid,room:ROOM});pushState(pid)}
       else if(d.t==='msg'&&conn.pid!=null&&NET.conns[conn.pid]===conn&&d.m&&typeof d.m.type==='string'){
         if('t' in d.m)d.m.t=now(); // Uhren der Handys sind nicht vergleichbar – es zählt die Ankunft am Fernseher
-        unlockAudio();handle(conn.pid,d.m)}});
+        unlockAudio();handle(conn.pid,d.m);
+        if(['setMusic','aiWish','gemSet'].includes(d.m.type))tell(conn.pid,{t:'ack'})}});
     conn.on('close',()=>dropConn(conn));conn.on('error',()=>dropConn(conn))});
   peer.on('error',e=>{
     if(e.type==='unavailable-id'&&!NET.everOpen)ROOM=''; // Code schon vergeben → neuer Code
@@ -1175,7 +1195,8 @@ function dial(){
       document.querySelectorAll('.phonebox').forEach((b,i)=>b.classList.toggle('me',i===ME));$('#net').hidden=true}
     else if(d.t==='full'){NET.full=true;netMsg('<div style="font-size:44px">🚪</div><div>Der Raum ist voll<br>(höchstens 4 Spieler).</div>')}
     else if(d.t==='state'&&ME!=null)applyState(d.s);
-    else if(d.t==='nolisten')stopListening()});
+    else if(d.t==='nolisten')stopListening()
+    else if(d.t==='ack'&&ME!=null){const me=P[ME];if(me.musPending||me.gemPending){me.musPending=0;me.gemPending=0;renderPhone(ME)}}});
   conn.on('close',()=>{if(NET.conn===conn){NET.conn=null;netMsg('<div style="font-size:44px">📡</div><div>Verbindung verloren –<br>verbinde neu …</div>')}});
 }
 // Spielstand vom Fernseher übernehmen; eigene Entwürfe (Name, Tipp, Pin …) bleiben lokal
@@ -1183,6 +1204,7 @@ function applyState(s){
   const oldRid=S.rid,me=P[ME];
   Object.assign(S,s.S);PLAY=s.PLAY;NET.tvV=s.V||'alt';
   if(me.gemPending&&s.AI&&(!AIREMOTE||s.AI.msg!==AIREMOTE.msg||s.AI.has!==AIREMOTE.has))me.gemPending=0;AIREMOTE=s.AI||null;
+  if(me.musPending&&s.MU&&(!MUREMOTE||s.MU.msg!==MUREMOTE.msg||s.MU.title!==MUREMOTE.title))me.musPending=0;MUREMOTE=s.MU||null;
   s.P.forEach(q=>{const p=P[q.id];
     if(q.id!==ME)Object.assign(p,q);
     else{p.joined=q.joined;p.score=q.score;p.prevScore=q.prevScore;if(q.joined){p.name=q.name;p.color=q.color;p.hat=q.hat}}});
@@ -1207,6 +1229,19 @@ function handle(pid,m){
       if(S.phase==='lobby'&&pid===S.hostId&&joined().length>=2){PLAY=[...S.prog];if(!PLAY.length)return;S.recorded=false;if(MODE==='tv'&&aiOn&&aiProvider())aiPrefetch();sfx('start');startGame(0)}break;
     case 'aiToggle':
       if(pid!==S.hostId||S.phase!=='lobby'||!aiProvider()||AI.denied)return;aiOn=!aiOn;aiStatus();renderAll();break;
+    case 'setMusic':{
+      if(pid!==S.hostId||S.phase!=='lobby'||typeof m.v!=='string')return;
+      let v=m.v.trim().slice(0,160);if(!v)return;
+      const link=v.match(/deezer\.com\/(?:[a-z]{2}\/)?playlist\/(\d+)/i);
+      if(link)v='pl:'+link[1];
+      else if(/deezer\.page\.link|link\.deezer\.com/i.test(v)){MUMSG={t:'Links aus der Deezer-App kann der Fernseher nicht öffnen – tippe stattdessen den Namen der Playlist ein.',ok:false};renderAll();return}
+      else if(/^https?:/i.test(v)){MUMSG={t:'Das ist kein Deezer-Playlist-Link.',ok:false};renderAll();return}
+      if(v!=='melodien'&&DZ.ok===false){MUMSG={t:'Deezer ist von diesem Fernseher aus nicht erreichbar.',ok:false};renderAll();return}
+      setMusic(v);break}
+    case 'aiWish':
+      if(pid!==S.hostId||S.phase!=='lobby'||typeof m.v!=='string'||m.v.length>300)return;
+      S.aiWish=m.v.trim().slice(0,200);try{localStorage.setItem('cd_ai_wish',S.aiWish)}catch(e){}
+      AI.state={};AI.pool={};aiStatus();renderAll();break;
     case 'gemSet':
       if(pid!==S.hostId||S.phase!=='lobby'||typeof m.key!=='string'||m.key.length>200)return;setGemKey(m.key.trim());break;
     case 'setLen':
@@ -1446,8 +1481,8 @@ function tvLobby(){
     <div class="daypill">📅 ${DATE_TXT} · ${MOTTO.e} <b>${MOTTO.n}</b>${streak()>1?` · 🔥 ${streak()} Abende in Folge`:''}</div>
     <div class="lgrid"><div class="joincard">${MODE==='tv'?realQR():QR}<p>Mit dem Handy scannen</p><div class="code">Raumcode<b>${ROOM&&(MODE!=='tv'||NET.everOpen)?ROOM:'····'}</b></div>${MODE==='tv'&&NET.everOpen?`<p class="joinurl">${esc((location.host+location.pathname).replace(/\/(index\.html)?$/,''))}#${ROOM}</p>`:''}</div><div class="slots">${slots}</div></div>
     <div class="gamelist">${S.prog.map((t,k)=>`<span><b>${k+1}</b> ${GAMES[t].icon} ${GAMES[t].name}</span>`).join('')}</div>
-    <div class="inforow">${S.prog.includes('music')?`<div class="ailine" style="color:#1f7a5a;background:#e6fbf2">🎵 Hit-Quiz: ${S.music==='melodien'?'eingebaute Melodien':'Deezer · '+esc(({charts:'Charts weltweit',evergreens:'Größte Hits aller Zeiten'})[S.music]||S.music)}</div>`:''}
-    ${aiProvider()&&aiOn?`<div class="ailine">🤖 ${aiProvider()} schreibt neue Fragen zum Motto</div>`:''}
+    <div class="inforow">${S.prog.includes('music')?`<div class="ailine" style="color:#1f7a5a;background:#e6fbf2">🎵 Hit-Quiz: ${esc(musicName(S.music))}</div>`:''}
+    ${aiProvider()&&aiOn?`<div class="ailine">🤖 ${aiProvider()} schreibt neue Fragen zum Motto${S.aiWish?` · Wunsch: „${esc(S.aiWish.length>40?S.aiWish.slice(0,40)+'…':S.aiWish)}“`:''}</div>`:''}
     ${hof()?`<div class="ailine" style="color:#a86a00;background:#fff6dc">🏆 Dauerwertung: ${hof()}</div>`:''}</div>
     <div class="hint">${n<2?'Warte auf Spieler … (mindestens 2)':`${esc(host.name)} kann den Abend jetzt starten!${MODE==='tv'?' (oder OK auf der Fernbedienung)':''}`}</div>${NET.status?`<div class="netline">📡 ${NET.status}</div>`:''}</div>`}
 function tvIntro(){const c=S.cur,g=GAMES[c.type];
@@ -1570,6 +1605,20 @@ function phoneBody(i){
   const host=i===S.hostId;
   switch(S.phase){
     case 'lobby':{const n=joined().length;
+      if(host&&p.musOpen){const mu=muInfo(),wait=p.musPending?now()-p.musPending:-1;
+        if(wait>=0&&wait<6000)setTimeout(()=>renderPhone(i),6100-wait);
+        const note=wait>=6000?['⚠️ Keine Antwort vom Fernseher. App am Fernseher neu öffnen und nochmal versuchen.',false]:wait>=0?['⏳ Wird an den Fernseher geschickt …',null]:mu.msg?[esc(mu.msg),mu.mok]:null;
+        const custom=!MUSIC_PRESETS.some(x=>x[0]===S.music);
+        return `<div class="pscroll"><div class="ptxt" style="font-size:6.4cqw"><b>🎵 Musik fürs Hit-Quiz</b></div>
+        ${mu.ok===false?'<div class="psmall" style="color:#e8590c">Deezer ist vom Fernseher aus nicht erreichbar – es gibt die eingebauten Melodien.</div>':''}
+        <div class="lenrow" style="grid-template-columns:1fr">${MUSIC_PRESETS.map(([v,n])=>`<button class="lenbtn ${S.music===v?'sel':''}" data-act="musPick" data-v="${esc(v)}" data-p="${i}" ${v!=='melodien'&&mu.ok===false?'disabled':''}>${v==='melodien'?'🎹':'🎧'} ${esc(n)}</button>`).join('')}
+        ${custom?`<button class="lenbtn sel" data-act="musPick" data-v="${esc(S.music)}" data-p="${i}">🎧 ${esc(mu.title||'Eigene Playlist')}</button>`:''}</div>
+        <div class="ptxt" style="font-size:5cqw;margin-top:2cqw"><b>Eigene Playlist</b></div>
+        <input class="pinput" style="font-size:max(16px,4.6cqw)" data-in="mus" data-p="${i}" maxlength="160" enterkeyhint="search" placeholder="Suchbegriff oder Deezer-Link" value="${esc(p.draftMus||'')}" autocomplete="off" autocapitalize="off" spellcheck="false">
+        <button class="pbtn" data-act="musSend" data-p="${i}">Playlist laden</button>
+        ${note?`<div class="psmall" style="color:${note[1]===true?'#1f7a5a':note[1]===false?'#e8590c':'inherit'}">${note[0]}</div>`:''}
+        <div class="psmall">Tippe den Namen einer Deezer-Playlist oder einen Suchbegriff wie „80er Party“ ein – der Fernseher nimmt den besten Treffer. Links von deezer.com/…/playlist/… gehen auch.</div>
+        <button class="pbtn ghost small" style="font-size:5cqw" data-act="musBack" data-p="${i}">‹ Zurück</button></div>`}
       if(host&&p.gemOpen){const ai=aiInfo(),old=MODE==='phone'&&NET.tvV&&NET.tvV!==APPV,wait=p.gemPending?now()-p.gemPending:-1;
         const st=ai.denied?'KI ist nicht erlaubt.':!ai.pv?'Noch kein Key – es gibt die eingebauten Fragen.':`KI-Fragen sind <b>${ai.on?'an':'aus'}</b> · ${esc(ai.pv)}`;
         if(wait>=0&&wait<5000)setTimeout(()=>renderPhone(i),5100-wait);
@@ -1582,12 +1631,18 @@ function phoneBody(i){
         ${note?`<div class="psmall" style="color:${note[1]===true?'#1f7a5a':note[1]===false?'#e8590c':'inherit'}">${note[0]}</div>`:''}
         <div class="psmall">${st}</div>
         <div class="lenrow" style="grid-template-columns:1fr 1fr">${ai.pv&&!ai.denied?`<button class="lenbtn" data-act="aiToggle" data-p="${i}">${ai.on?'KI aus':'KI an'}</button>`:''}${ai.has?`<button class="lenbtn" data-act="gemDel" data-p="${i}">Key löschen</button>`:''}</div>
+        ${ai.pv&&!ai.denied?`<div class="ptxt" style="font-size:5cqw;margin-top:2cqw"><b>Wunsch an die KI</b></div>
+        <textarea class="pinput" style="font-size:max(16px,4.4cqw);text-align:left;resize:none" rows="3" data-in="wish" data-p="${i}" maxlength="200" placeholder="z. B. leichte Fragen für Kinder, viel Fußball, Fragen über Bayern …">${esc(p.draftWish!=null?p.draftWish:S.aiWish)}</textarea>
+        <div class="lenrow" style="grid-template-columns:1fr 1fr">${['Leicht, für Kinder','Schwer, für Profis','Lustig und albern','Viel Musik und Filme'].map(w=>`<button class="lenbtn" data-act="wishChip" data-v="${w}" data-p="${i}">${w}</button>`).join('')}</div>
+        <button class="pbtn" data-act="wishSend" data-p="${i}">Wunsch übernehmen</button>
+        <div class="psmall">${S.aiWish?`Aktuell: „${esc(S.aiWish)}“`:'Noch kein Wunsch – die KI richtet sich nach dem Motto des Tages.'}</div>
+        ${S.aiWish?`<button class="lenbtn" data-act="wishClear" data-p="${i}">Wunsch löschen</button>`:''}`:''}
         <button class="pbtn ghost small" style="font-size:5cqw" data-act="gemBack" data-p="${i}">‹ Zurück</button>
         <div class="psmall">Mit einem Gemini-API-Key (kostenlos bei Google AI Studio) schreibt die KI jeden Abend neue Fragen zum Motto. Der Key wird nur am Fernseher gespeichert.</div></div>`}
       if(host)return `<div class="pc-center" style="gap:2.4cqw"><div class="ptxt" style="font-size:6.4cqw"><b>Abendprogramm 👑</b></div>
         <div class="lenrow">${[[4,'Kurz'],[6,'Normal'],[9,'Lang'],[13,'Alle']].map(([k,l])=>`<button class="lenbtn ${S.len===k?'sel':''}" data-act="setLen" data-v="${k}" data-p="${i}">${l}</button>`).join('')}</div>
         <div class="gchips">${ORDER.map(t=>{const k=S.prog.indexOf(t);return `<button class="gchip ${k<0?'off':''}" data-act="toggleGame" data-v="${t}" data-p="${i}" title="${GAMES[t].name}" aria-label="${GAMES[t].name}"><span>${GAMES[t].icon}</span>${k>=0?`<b>${k+1}</b>`:''}</button>`}).join('')}</div>
-        <div class="lenrow" style="grid-template-columns:1fr 1fr"><button class="lenbtn" data-act="reroll" data-p="${i}">🎲 Neu mischen</button><button class="lenbtn" data-act="gemOpen" data-p="${i}">🤖 KI: ${(a=>a.pv&&a.on&&!a.denied?'an':'aus')(aiInfo())}</button></div>
+        <div class="lenrow" style="grid-template-columns:1fr 1fr 1fr"><button class="lenbtn" data-act="reroll" data-p="${i}">🎲 Mischen</button><button class="lenbtn" data-act="musOpen" data-p="${i}">🎵 Musik</button><button class="lenbtn" data-act="gemOpen" data-p="${i}">🤖 KI: ${(a=>a.pv&&a.on&&!a.denied?'an':'aus')(aiInfo())}</button></div>
         <button class="pbtn" data-act="start" data-p="${i}" ${n<2?'disabled':''}>Spiel starten</button>${n<2?'<div class="psmall">Warte auf mind. 1 weiteren Spieler</div>':''}</div>`;
       return `<div class="pc-center">${avatar(p,{cls:'idle wave'})}<div class="ptxt"><b>Du bist dabei!</b></div>${host
         ?`<div class="psmall">Du bist Gastgeber 👑</div><button class="pbtn" data-act="start" data-p="${i}" ${n<2?'disabled':''}>Spiel starten</button>${n<2?'<div class="psmall">Warte auf mind. 1 weiteren Spieler</div>':''}`
@@ -1666,6 +1721,10 @@ function shakeInput(i,key){const inp=document.querySelector(`#ps${i} [data-in="$
 function submitGuess(i){const p=P[i],v=parseFloat(String(p.draftGuess).replace(',','.'));if(isNaN(v))return shakeInput(i,'guess');p.draftGuess='';send(i,{type:'guess',v,t:now()})}
 function submitGem(i){const p=P[i],inp=document.querySelector(`#ps${i} [data-in="gem"]`),k=String((inp&&inp.value)||p.draftGem||'').trim();if(!k)return shakeInput(i,'gem');
   if(inp)inp.blur();p.draftGem='';p.gemPending=now();send(i,{type:'gemSet',key:k});renderPhone(i)}
+function submitMus(i){const p=P[i],inp=document.querySelector(`#ps${i} [data-in="mus"]`),v=String((inp&&inp.value)||p.draftMus||'').trim();if(!v)return shakeInput(i,'mus');
+  if(inp)inp.blur();p.draftMus='';p.musPending=now();send(i,{type:'setMusic',v});renderPhone(i)}
+function submitWish(i){const p=P[i],inp=document.querySelector(`#ps${i} [data-in="wish"]`),v=String(inp?inp.value:(p.draftWish||'')).trim();
+  if(inp)inp.blur();p.draftWish=null;send(i,{type:'aiWish',v});renderPhone(i)}
 function submitSay(i){const p=P[i],t=p.draftSay.trim();if(!t)return shakeInput(i,'say');p.draftSay='';stopListening();send(i,{type:'say',text:t})}
 function hit(btn){btn.classList.add('hit');setTimeout(()=>btn.classList.remove('hit'),120)}
 document.addEventListener('click',e=>{
@@ -1710,7 +1769,14 @@ document.addEventListener('click',e=>{
     case 'sel':{const v=+b.dataset.v;if(p.draftOrder.includes(v)||p.draftOrder.length>=4)return;p.draftOrder.push(v);sfx('tick');renderPhone(i);
       if(p.draftOrder.length===4){const o=[...p.draftOrder];setTimeout(()=>send(i,{type:'order',order:o}),220)}break}
     case 'sreset':p.draftOrder=[];renderPhone(i);break;
-    case 'gemOpen':p.gemOpen=true;renderPhone(i);break;
+    case 'gemOpen':p.gemOpen=true;p.draftWish=null;renderPhone(i);break;
+    case 'musOpen':p.musOpen=true;renderPhone(i);break;
+    case 'musBack':p.musOpen=false;p.draftMus='';renderPhone(i);break;
+    case 'musPick':p.musPending=now();send(i,{type:'setMusic',v:b.dataset.v});renderPhone(i);break;
+    case 'musSend':submitMus(i);break;
+    case 'wishChip':p.draftWish=b.dataset.v;renderPhone(i);break;
+    case 'wishSend':submitWish(i);break;
+    case 'wishClear':p.draftWish=null;send(i,{type:'aiWish',v:''});renderPhone(i);break;
     case 'gemBack':p.gemOpen=false;p.draftGem='';renderPhone(i);break;
     case 'gemSend':submitGem(i);break;
     case 'gemDel':p.gemPending=now();send(i,{type:'gemSet',key:''});renderPhone(i);break;
@@ -1757,7 +1823,7 @@ document.addEventListener('pointerup',e=>{
 });
 document.addEventListener('pointercancel',()=>{swipeStart=null;if(drawing){const i=drawing.i;drawing=null;renderPhone(i)}});
 document.addEventListener('input',e=>{const t=e.target;if(!t.dataset||!t.dataset.in)return;const p=P[+t.dataset.p];
-  ({name:()=>p.draftName=t.value,guess:()=>p.draftGuess=t.value,say:()=>p.draftSay=t.value,gem:()=>p.draftGem=t.value})[t.dataset.in]();
+  ({name:()=>p.draftName=t.value,guess:()=>p.draftGuess=t.value,say:()=>p.draftSay=t.value,gem:()=>p.draftGem=t.value,mus:()=>p.draftMus=t.value,wish:()=>p.draftWish=t.value})[t.dataset.in]();
   if(MODE==='phone'&&ME!=null)lastH=normH(phoneHTML(ME))});
 document.addEventListener('keydown',e=>{
   const t=e.target;
@@ -1765,7 +1831,7 @@ document.addEventListener('keydown',e=>{
   if(MODE==='tv'){unlockAudio();
     if((e.key==='Enter'||e.key===' ')&&S.hostId!=null){e.preventDefault();handle(S.hostId,{type:S.phase==='lobby'?'start':S.phase==='final'?'restart':'next'})}
     return}
-  if(t.dataset&&t.dataset.in&&(e.key==='Enter'||e.keyCode===13)){unlockAudio();const i=+t.dataset.p;({name:joinFrom,guess:submitGuess,say:submitSay,gem:submitGem})[t.dataset.in](i);return}
+  if(t.dataset&&t.dataset.in&&(e.key==='Enter'||e.keyCode===13)){unlockAudio();const i=+t.dataset.p;({name:joinFrom,guess:submitGuess,say:submitSay,gem:submitGem,mus:submitMus,wish:null})[t.dataset.in]?.(i);return}
   if(t.tagName==='INPUT'||t.tagName==='SELECT')return;
   if(MODE==='demo'&&['1','2','3','4'].includes(e.key)&&S.phase==='play'){const i=+e.key-1;if(!P[i].joined)return;unlockAudio();
     const btn=document.querySelector(`#ps${i} .bigbtn`);if(btn)hit(btn);
@@ -1775,9 +1841,9 @@ document.addEventListener('keydown',e=>{
     else if(['quiz','draw','music'].includes(S.cur.type)){startListening(i);send(i,{type:'buzz'})}}
 });
 $('#target').addEventListener('change',e=>{if(S.phase==='lobby')S.target=+e.target.value});
-$('#music').addEventListener('change',e=>{if(S.phase!=='lobby')return;S.music=e.target.value;DZ.tracks=[];DZ.promise=null;renderTV()});
+$('#music').addEventListener('change',e=>{if(S.phase!=='lobby')return;setMusic(e.target.value)});
 // Prüfen, ob Deezer erreichbar ist (in der Claude-Vorschau blockiert, im normalen Browser ok)
-if(MODE!=='phone')jsonp('https://api.deezer.com/chart/0/tracks?limit=1',6000).then(()=>{DZ.ok=true;if(S.phase==='lobby'&&S.music==='melodien')S.music='evergreens';musicUI();if(S.phase==='lobby')renderTV()})
+if(MODE!=='phone')jsonp('https://api.deezer.com/chart/0/tracks?limit=1',6000).then(()=>{DZ.ok=true;if(S.phase==='lobby'&&S.music==='melodien'){if(S.musicSaved&&S.musicSaved!=='melodien')setMusic(S.musicSaved);else if(!S.musicSaved)S.music='evergreens'}musicUI();if(S.phase==='lobby')renderTV()})
   .catch(()=>{DZ.ok=false;musicUI()});
 
 /* =====================================================================
