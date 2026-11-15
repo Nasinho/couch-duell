@@ -483,7 +483,7 @@ body.mode-phone .pscreen{border-radius:0;padding-top:env(safe-area-inset-top);pa
    Ohne Parameter: Fernseher (zeigt QR-Code, führt das Spiel) · ?r=CODE oder #CODE: Handy-Controller
    ?demo: Prototyp-Ansicht mit Fernseher und vier simulierten Handys auf einer Seite
    ===================================================================== */
-const APPV='2026-11-15r'; // bei Änderungen am Protokoll zwischen Fernseher und Handy hochzählen
+const APPV='2026-11-15s'; // bei Änderungen am Protokoll zwischen Fernseher und Handy hochzählen
 const QS=new URLSearchParams(location.search);
 let ROOM=(QS.get('r')||(/^#[A-Za-z0-9]{4}$/.test(location.hash)?location.hash.slice(1):'')).toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,4);
 const MODE=typeof Peer==='undefined'||QS.has('demo')?'demo':(QS.has('r')||ROOM?'phone':'tv');
@@ -546,8 +546,8 @@ function makeProg(len,salt){
   while(out.length<len&&(A.length||K.length)){if(A.length)out.push(A.pop());if(out.length<len&&K.length)out.push(K.pop())}
   return out}
 
-// Quiz-Abend: nur Buzzer-Quiz und Hit-Quiz im Wechsel (6 Spiele), „Mischen“ tauscht, womit es losgeht
-const quizProg=salt=>[...Array(6)].map((_,i)=>(i+salt)%2?'music':'quiz');
+// Nur-Quiz- bzw. Nur-Hit-Quiz-Abend: 6 Spiele desselben Typs (S.len -1 = Quiz, -2 = Hit-Quiz)
+const ONLY={'-1':'quiz','-2':'music'},onlyProg=len=>Array(6).fill(ONLY[len]);
 
 const QUIZ=[
   {q:'Wie viele Bundesländer hat Deutschland?',a:['14','15','16','17'],c:2},
@@ -1443,10 +1443,10 @@ function handle(pid,m){
       S.len=m.n;S.prog=makeProg(m.n,S.salt);sfx('tick');renderAll();break;
     case 'reroll':
       if(S.phase!=='lobby'||pid!==S.hostId)return;
-      S.salt++;S.prog=S.len===-1?quizProg(S.salt):makeProg(S.len||S.prog.length,S.salt);sfx('whoosh');renderAll();break;
+      S.salt++;S.prog=ONLY[S.len]?onlyProg(S.len):makeProg(S.len||S.prog.length,S.salt);sfx('whoosh');renderAll();break;
     case 'quizMode':
       if(S.phase!=='lobby'||pid!==S.hostId)return;
-      S.len=-1;S.prog=quizProg(S.salt);sfx('tick');renderAll();break;
+      if(!ONLY[m.n])return;S.len=m.n;S.prog=onlyProg(m.n);sfx('tick');renderAll();break;
     case 'toggleGame':
       if(S.phase!=='lobby'||pid!==S.hostId||!GAMES[m.t])return;
       {const k=S.prog.indexOf(m.t);
@@ -1848,7 +1848,7 @@ function phoneBody(i){
         <div class="psmall">Mit einem Gemini-API-Key (kostenlos bei Google AI Studio) schreibt die KI jeden Abend neue Fragen zum Motto. Der Key wird nur am Fernseher gespeichert.</div></div>`}
       if(host)return `<div class="pc-center" style="gap:2.4cqw"><div class="ptxt" style="font-size:6.4cqw"><b>Abendprogramm 👑</b></div>
         <div class="lenrow">${[[4,'Kurz'],[6,'Normal'],[9,'Lang'],[13,'Alle']].map(([k,l])=>`<button class="lenbtn ${S.len===k?'sel':''}" data-act="setLen" data-v="${k}" data-p="${i}">${l}</button>`).join('')}</div>
-        <button class="lenbtn ${S.len===-1?'sel':''}" data-act="quizMode" data-p="${i}">❓🎵 Nur Quiz &amp; Hit-Quiz</button>
+        <div class="lenrow" style="grid-template-columns:1fr 1fr">${[[-1,'❓ Nur Quiz'],[-2,'🎵 Nur Hit-Quiz']].map(([k,l])=>`<button class="lenbtn ${S.len===k?'sel':''}" data-act="quizMode" data-v="${k}" data-p="${i}">${l}</button>`).join('')}</div>
         <div class="gchips">${ORDER.map(t=>{const k=S.prog.indexOf(t);return `<button class="gchip ${k<0?'off':''}" data-act="toggleGame" data-v="${t}" data-p="${i}" title="${GAMES[t].name}" aria-label="${GAMES[t].name}"><span>${GAMES[t].icon}</span>${k>=0?`<b>${k+1}</b>`:''}</button>`}).join('')}</div>
         <div class="lenrow" style="grid-template-columns:1fr 1fr 1fr"><button class="lenbtn" data-act="reroll" data-p="${i}">🎲 Mischen</button><button class="lenbtn" data-act="musOpen" data-p="${i}">🎵 Musik</button><button class="lenbtn" data-act="gemOpen" data-p="${i}">🤖 KI: ${(a=>a.pv&&a.on&&!a.denied?'an':'aus')(aiInfo())}</button></div>
         <button class="pbtn" data-act="start" data-p="${i}" ${n<2?'disabled':''}>Spiel starten</button>${n<2?'<div class="psmall">Warte auf mind. 1 weiteren Spieler</div>':''}</div>`;
@@ -1992,7 +1992,7 @@ document.addEventListener('click',e=>{
     case 'gemDel':p.gemPending=now();send(i,{type:'gemSet',key:''});renderPhone(i);break;
     case 'toggleGame':send(i,{type:'toggleGame',t:b.dataset.v});break;
     case 'setLen':send(i,{type:'setLen',n:+b.dataset.v});break;
-    case 'quizMode':send(i,{type:'quizMode'});break;
+    case 'quizMode':send(i,{type:'quizMode',n:+b.dataset.v});break;
     case 'endAsk':
       if(now()-p.endArm<3000){p.endArm=0;send(i,{type:'endGame'})}
       else{p.endArm=now();renderPhone(i);setTimeout(()=>{if(p.endArm&&now()-p.endArm>=2900){p.endArm=0;renderPhone(i)}},3000)}
