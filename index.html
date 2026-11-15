@@ -483,7 +483,7 @@ body.mode-phone .pscreen{border-radius:0;padding-top:env(safe-area-inset-top);pa
    Ohne Parameter: Fernseher (zeigt QR-Code, führt das Spiel) · ?r=CODE oder #CODE: Handy-Controller
    ?demo: Prototyp-Ansicht mit Fernseher und vier simulierten Handys auf einer Seite
    ===================================================================== */
-const APPV='2026-11-15n'; // bei Änderungen am Protokoll zwischen Fernseher und Handy hochzählen
+const APPV='2026-11-15o'; // bei Änderungen am Protokoll zwischen Fernseher und Handy hochzählen
 const QS=new URLSearchParams(location.search);
 let ROOM=(QS.get('r')||(/^#[A-Za-z0-9]{4}$/.test(location.hash)?location.hash.slice(1):'')).toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,4);
 const MODE=typeof Peer==='undefined'||QS.has('demo')?'demo':(QS.has('r')||ROOM?'phone':'tv');
@@ -859,7 +859,7 @@ function setGemKey(key){
     .finally(()=>{if(GEM.key===key)renderAll()})}
 // Wird direkt aus dem Klick des Gastgebers gestartet (erste Nutzung fragt einmal nach Erlaubnis)
 async function aiPrefetch(reset){if(reset){AI.state={};AI.pool={}}if(!aiOn||!aiProvider())return;await aiBatch(S.prog)}
-const aiReady=()=>{const t=[...new Set(S.prog)].filter(x=>AI_SPECS[x]);if(!t.length)return '';const n=t.filter(x=>AI.state[x]==='ready').length,l=t.some(x=>AI.state[x]==='loading');const e=t.some(x=>AI.state[x]==='error');return ` · ${n}/${t.length} Spiele fertig${l?(AI.got?` · ${(AI.got/1000).toFixed(1)}k Zeichen …`:' …'):''}${e&&AI.err?` · ⚠️ ${esc(AI.err)}`:''}`};
+const aiReady=()=>{const t=[...new Set(S.prog)].filter(x=>AI_SPECS[x]);if(!t.length)return '';if(!t.some(x=>AI.state[x]))return ' · legt los, sobald ihr startet';const n=t.filter(x=>AI.state[x]==='ready').length,l=t.some(x=>AI.state[x]==='loading');const e=t.some(x=>AI.state[x]==='error');return ` · ${n}/${t.length} Spiele fertig${l?(AI.got?` · ${(AI.got/1000).toFixed(1)}k Zeichen …`:' …'):''}${e&&AI.err?` · ⚠️ ${esc(AI.err)}`:''}`};
 function aiStatus(){
   const pv=aiProvider(),b=$('#aiBtn');if(b){b.disabled=!pv;b.style.opacity=pv?1:.55;
     b.textContent=!pv?'🤖 KI aus (Gemini-Key fehlt)':AI.denied?'🤖 KI nicht erlaubt':`🤖 KI-Fragen: ${aiOn?'an':'aus'} · ${pv}`}
@@ -1417,22 +1417,22 @@ function handle(pid,m){
     case 'aiWish':
       if(pid!==S.hostId||S.phase!=='lobby'||typeof m.v!=='string'||m.v.length>300)return;
       S.aiWish=m.v.trim().slice(0,200);try{localStorage.setItem('cd_ai_wish',S.aiWish)}catch(e){}
-      AI.state={};AI.pool={};aiStatus();renderAll();if(MODE==='tv')aiPrefetch();break; // gleich in der Lobby mit dem Schreiben anfangen
+      AI.state={};AI.pool={};aiStatus();renderAll();break; // Gemini wird erst bei „Spiel starten“ gefragt
     case 'gemSet':
       if(pid!==S.hostId||S.phase!=='lobby'||typeof m.key!=='string'||m.key.length>200)return;setGemKey(m.key.trim());break;
     case 'setLen':
       if(S.phase!=='lobby'||pid!==S.hostId||![4,6,9,13].includes(m.n))return;
-      S.len=m.n;S.prog=makeProg(m.n,S.salt);sfx('tick');renderAll();if(MODE==='tv')aiPrefetch();break;
+      S.len=m.n;S.prog=makeProg(m.n,S.salt);sfx('tick');renderAll();break;
     case 'reroll':
       if(S.phase!=='lobby'||pid!==S.hostId)return;
-      S.salt++;S.prog=makeProg(S.len||S.prog.length,S.salt);sfx('whoosh');renderAll();if(MODE==='tv')aiPrefetch();break;
+      S.salt++;S.prog=makeProg(S.len||S.prog.length,S.salt);sfx('whoosh');renderAll();break;
     case 'toggleGame':
       if(S.phase!=='lobby'||pid!==S.hostId||!GAMES[m.t])return;
       {const k=S.prog.indexOf(m.t);
         if(k>=0){if(S.prog.length<=1)return;S.prog.splice(k,1)} // mindestens ein Spiel bleibt an
         else S.prog.push(m.t);
         S.len=0}
-      sfx('tick');renderAll();if(MODE==='tv')aiPrefetch();break;
+      sfx('tick');renderAll();break;
     case 'endGame': // Gastgeber beendet den Abend sofort → Endstand
       if(pid!==S.hostId||!['intro','play','roundEnd','gameWin','scores'].includes(S.phase))return;
       stopListening();stopMusic();finish();break;
@@ -2049,7 +2049,6 @@ if(MODE!=='phone')jsonp('https://api.deezer.com/chart/0/tracks?limit=1',6000).th
   renderAll();aiStatus();
   if(MODE==='tv'){
     hostNet();setInterval(hostWatch,4000);
-    setTimeout(()=>{if(S.phase==='lobby')aiPrefetch()},2000); // KI-Fragen schon in der Lobby schreiben lassen
     document.addEventListener('pointerdown',unlockAudio);
     unlockAudio();if(AC&&AC.state==='suspended')$('#tvnote').hidden=false}
   if(MODE==='phone')phoneNet();
