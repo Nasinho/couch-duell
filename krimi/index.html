@@ -1,0 +1,901 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Couch-Krimi</title>
+<meta name="theme-color" content="#14161c">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Special+Elite&family=Caveat:wght@500;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#14161c;--panel:#1f232d;--panel2:#272c38;--line:#363c4a;--txt:#eef0f5;--mute:#98a0b3;--paper:#f3ead3;--paper2:#e9dcba;--ink:#2b2620;--red:#d23c46;--amber:#e6a83a;--green:#3fb37f;--blue:#4c8dff}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);font-family:Inter,system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
+button{font:inherit;cursor:pointer}
+.hide{display:none!important}
+
+/* ---------- Dokumente (TV und Handy) ---------- */
+.doc{background:var(--paper);color:var(--ink);border-radius:6px;padding:1.6em 1.8em;font-family:"Special Elite",Courier,monospace;line-height:1.45;box-shadow:0 10px 30px rgba(0,0,0,.45);position:relative}
+.doc h3{font-family:Inter,sans-serif;font-weight:800;margin:0 0 .2em;font-size:1.15em;letter-spacing:.02em}
+.doc .sub{font-family:Inter,sans-serif;color:#6b6152;font-size:.8em;margin-bottom:1em}
+.doc .stamp{position:absolute;right:1.2em;top:1em;border:3px solid var(--red);color:var(--red);font-family:Inter,sans-serif;font-weight:800;padding:.1em .5em;transform:rotate(8deg);opacity:.75;font-size:.8em;letter-spacing:.1em}
+.doc p{margin:.5em 0;white-space:pre-wrap}
+.doc .qa{display:grid;grid-template-columns:auto 1fr;gap:.35em .8em}
+.doc .qa b{font-family:Inter,sans-serif;font-size:.85em;padding-top:.1em;white-space:nowrap}
+.doc table{width:100%;border-collapse:collapse;font-size:.9em}
+.doc th{font-family:Inter,sans-serif;text-align:left;border-bottom:2px solid var(--ink);padding:.3em .4em;font-size:.85em}
+.doc td{border-bottom:1px dashed #b7a988;padding:.3em .4em;vertical-align:top}
+.doc .kv{display:grid;grid-template-columns:auto 1fr;gap:.25em 1em;margin-bottom:.8em}
+.doc .kv b{font-family:Inter,sans-serif;font-size:.85em}
+.doc.notiz{background:#fff8b5;font-family:Caveat,cursive;font-size:1.35em;transform:rotate(-.6deg)}
+.doc.zeitung{font-family:Georgia,serif;background:#efeae0}
+.doc.zeitung .zt{font-family:"Playfair Display",serif;font-weight:900;font-size:1.1em;border-bottom:3px double var(--ink);text-align:center;padding-bottom:.2em;margin-bottom:.4em;letter-spacing:.05em}
+.doc.zeitung h3{font-family:"Playfair Display",serif;font-size:1.6em;line-height:1.1}
+.doc.zeitung p{columns:2;column-gap:1.4em}
+.doc.chat{background:#e5ddd5;font-family:Inter,sans-serif}
+.chatwrap{display:flex;flex-direction:column;gap:.45em}
+.bub{max-width:80%;padding:.45em .7em;border-radius:.8em;background:#fff;box-shadow:0 1px 1px rgba(0,0,0,.15);font-size:.95em}
+.bub.me{align-self:flex-end;background:#d9fdd3}
+.bub i{display:block;font-style:normal;font-size:.72em;color:#667;margin-bottom:.1em;font-weight:600}
+.bub u{display:block;text-decoration:none;font-size:.68em;color:#889;text-align:right}
+.doc.email .kv{border-bottom:1px solid #b7a988;padding-bottom:.6em}
+.doc.foto{background:#fdfdfb;padding:1em 1em 1.4em;font-family:Caveat,cursive}
+.doc.foto img{width:100%;display:block;border-radius:2px;background:#222}
+.doc.foto .cap{font-size:1.4em;margin-top:.4em}
+.doc.foto .ph{aspect-ratio:4/3;background:repeating-linear-gradient(45deg,#2d3038,#2d3038 12px,#33373f 12px,#33373f 24px);color:#cfd3dc;display:flex;align-items:center;justify-content:center;text-align:center;padding:1.5em;font-family:Inter,sans-serif;font-size:.9em}
+.doc.audio{background:#202530;color:var(--txt);font-family:Inter,sans-serif}
+.doc.audio .sub{color:var(--mute)}
+.doc.audio .line{margin:.35em 0}.doc.audio .line b{color:var(--amber)}
+.wave{display:flex;gap:4px;align-items:center;height:60px;margin:.5em 0 1em}
+.wave i{flex:1;background:var(--amber);border-radius:3px;opacity:.35;height:20%}
+.wave.on i{animation:wv 1s ease-in-out infinite;opacity:.9}
+@keyframes wv{0%,100%{height:15%}50%{height:95%}}
+.doc.karte svg{width:100%;display:block;border-radius:4px}
+.doc .lock{font-family:Inter,sans-serif;color:#6b6152}
+
+/* ---------- Fernseher ---------- */
+#tv{position:fixed;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0;overflow:hidden;background:radial-gradient(1200px 700px at 70% -10%,#2a3040 0%,var(--bg) 60%)}
+.tvh{position:absolute;left:0;right:0;top:0;height:96px;display:flex;align-items:center;gap:28px;padding:0 44px;border-bottom:1px solid var(--line);background:rgba(20,22,28,.7)}
+.brand{font-family:"Playfair Display",serif;font-weight:900;font-size:40px;letter-spacing:.01em}.brand b{color:var(--red)}
+.pill{background:var(--panel2);border:1px solid var(--line);border-radius:99px;padding:8px 20px;font-size:24px;color:var(--mute);white-space:nowrap}
+.pill b{color:var(--txt)}
+.grow{flex:1}
+.lobby{position:absolute;inset:96px 0 0 0;display:grid;grid-template-columns:520px 1fr;gap:56px;padding:60px 80px}
+.qrbox{background:#fff;color:#1b1e26;border-radius:28px;padding:34px;text-align:center;align-self:start}
+.qrbox svg{width:330px;height:330px;display:block;margin:0 auto}
+.qrbox .code{font-size:84px;font-weight:800;letter-spacing:.14em;color:var(--red);margin-top:6px}
+.qrbox .u{color:#667;font-size:20px}
+.lob-r h1{font-family:"Playfair Display",serif;font-size:76px;margin:0 0 10px;line-height:1.05}
+.lob-r .lead{font-size:30px;color:var(--mute);margin:0 0 36px;max-width:1100px}
+.players{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:36px}
+.pl{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:99px;padding:10px 26px 10px 10px;font-size:28px;font-weight:600}
+.dot{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:22px;flex:none}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:28px 34px}
+.steps{display:grid;gap:12px;font-size:26px}
+.steps div{display:flex;gap:14px;align-items:center;color:var(--mute)}
+.steps .ok{color:var(--txt)}.steps .now{color:var(--amber)}.steps .bad{color:var(--red)}
+.spin{width:24px;height:24px;border:3px solid var(--amber);border-right-color:transparent;border-radius:50%;animation:sp 1s linear infinite;flex:none}
+@keyframes sp{to{transform:rotate(360deg)}}
+.casecard h2{font-family:"Playfair Display",serif;font-size:52px;margin:0 0 8px}
+.casecard .meta{color:var(--amber);font-size:26px;margin-bottom:14px}
+.casecard p{font-size:26px;line-height:1.45;color:#d6dae4;margin:0}
+.hintline{margin-top:22px;font-size:26px;color:var(--mute)}
+/* Ermittlung */
+.play{position:absolute;inset:96px 0 0 0;display:grid;grid-template-columns:430px 1fr 470px;gap:26px;padding:26px 34px}
+.evlist{overflow:hidden;display:flex;flex-direction:column;gap:10px}
+.evlist h4,.side h4{margin:0 0 4px;font-size:20px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
+.ev{display:flex;align-items:center;gap:14px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 16px;font-size:21px;line-height:1.2}
+.ev .ic{font-size:28px;width:36px;text-align:center;flex:none}
+.ev small{display:block;color:var(--mute);font-size:16px}
+.ev.cur{border-color:var(--amber);background:#2f2a1e}
+.ev.new{box-shadow:0 0 0 2px var(--red) inset}
+.ev.lockd{opacity:.35}
+.chsep{font-size:17px;color:var(--mute);margin:6px 0 0;letter-spacing:.1em;text-transform:uppercase}
+.viewer{position:relative;overflow:hidden;border-radius:16px}
+.vscroll{position:absolute;inset:0;overflow-y:auto;scroll-behavior:smooth;padding:6px 10px 40px;scrollbar-width:none}
+.vscroll::-webkit-scrollbar{display:none}
+.viewer .doc{font-size:27px;max-width:1000px;margin:0 auto}
+.viewer .doc.foto{max-width:900px}
+.empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--mute);font-size:30px;text-align:center;gap:16px}
+.empty .big{font-size:90px}
+.side{display:flex;flex-direction:column;gap:20px;overflow:hidden}
+.task{background:linear-gradient(180deg,#2d2230,#231d27);border:1px solid #5a3a46;border-radius:20px;padding:24px 26px}
+.task .lbl{color:#ff8b93;font-size:18px;letter-spacing:.14em;text-transform:uppercase;font-weight:800}
+.task .q{font-size:27px;font-weight:600;margin:10px 0 0;line-height:1.3}
+.task .opts{margin-top:12px;display:grid;gap:6px;font-size:21px;color:#d9cfd8}
+.task .hint{margin-top:12px;background:rgba(230,168,58,.12);border-left:4px solid var(--amber);padding:10px 14px;border-radius:6px;font-size:20px;color:#f2dfb6}
+.sus{display:grid;gap:10px}
+.su{display:flex;gap:14px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 14px}
+.su .nm{font-size:22px;font-weight:700;line-height:1.15}
+.su .rl{font-size:16px;color:var(--mute)}
+.su .mk{margin-left:auto;font-size:15px;font-weight:800;padding:4px 10px;border-radius:99px;white-space:nowrap}
+.mk.v{background:rgba(210,60,70,.2);color:#ff8b93}.mk.e{background:rgba(63,179,127,.18);color:#7fe0b4}.mk.q{background:rgba(152,160,179,.15);color:var(--mute)}
+.toast{position:absolute;left:50%;bottom:34px;transform:translateX(-50%);background:#000c;border:1px solid var(--line);padding:14px 30px;border-radius:99px;font-size:26px;transition:opacity .4s;pointer-events:none;white-space:nowrap}
+.overlay{position:absolute;inset:0;background:rgba(10,11,15,.88);display:flex;align-items:center;justify-content:center;z-index:5}
+.ovbox{max-width:1300px;text-align:center}
+.ovbox .big{font-size:120px}
+.ovbox h2{font-family:"Playfair Display",serif;font-size:72px;margin:10px 0}
+.ovbox p{font-size:30px;color:#d6dae4;line-height:1.45}
+.brief{position:absolute;inset:96px 0 0 0;display:flex;align-items:center;justify-content:center;padding:60px 140px}
+.brief .file{background:var(--paper);color:var(--ink);border-radius:8px;padding:56px 70px;max-width:1500px;box-shadow:0 30px 70px rgba(0,0,0,.5);position:relative;font-family:"Special Elite",monospace}
+.brief .file h2{font-family:"Playfair Display",serif;font-size:66px;margin:0 0 10px;line-height:1.05}
+.brief .file .meta{font-family:Inter,sans-serif;color:#6b6152;font-size:26px;margin-bottom:24px}
+.brief .file p{font-size:30px;line-height:1.5;margin:0}
+.brief .file .stamp{position:absolute;right:50px;top:40px;border:5px solid var(--red);color:var(--red);font-family:Inter,sans-serif;font-weight:800;font-size:30px;padding:4px 16px;transform:rotate(9deg);opacity:.8;letter-spacing:.12em}
+.result{position:absolute;inset:96px 0 0 0;display:grid;grid-template-columns:1fr 1fr;gap:40px;padding:50px 80px;overflow:hidden}
+.result h2{font-family:"Playfair Display",serif;font-size:64px;margin:0 0 14px}
+.rrow{display:flex;justify-content:space-between;gap:20px;font-size:27px;padding:14px 0;border-bottom:1px solid var(--line)}
+.rrow b.ok{color:var(--green)}.rrow b.no{color:var(--red)}
+.score{font-size:110px;font-weight:800;color:var(--amber);line-height:1}
+.sol{font-size:25px;line-height:1.5;color:#d6dae4;white-space:pre-wrap}
+
+/* ---------- Handy ---------- */
+#ph{max-width:640px;margin:0 auto;min-height:100%;display:flex;flex-direction:column}
+.ptop{position:sticky;top:0;z-index:3;background:rgba(20,22,28,.95);backdrop-filter:blur(6px);padding:12px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
+.ptop .t{font-weight:800;font-size:17px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ptop .tm{color:var(--amber);font-variant-numeric:tabular-nums;font-weight:700}
+.pbody{flex:1;padding:16px 16px 100px}
+.tabs{position:fixed;left:0;right:0;bottom:0;display:flex;background:#191c24;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);z-index:4}
+.tabs button{flex:1;background:none;border:0;color:var(--mute);padding:10px 0 12px;font-size:12px;font-weight:600;position:relative}
+.tabs button span{display:block;font-size:22px}
+.tabs button.on{color:var(--txt)}
+.tabs .badge{position:absolute;top:6px;left:calc(50% + 8px);background:var(--red);color:#fff;border-radius:99px;font-size:11px;padding:1px 6px}
+.btn{display:block;width:100%;border:0;border-radius:14px;padding:15px;font-weight:800;font-size:17px;background:var(--red);color:#fff;margin-top:12px}
+.btn.sec{background:var(--panel2);color:var(--txt);border:1px solid var(--line)}
+.btn.small{padding:10px;font-size:15px}
+.btn:disabled{opacity:.4}
+.row{display:flex;gap:10px}.row .btn{flex:1}
+input.in,textarea.in,select.in{width:100%;background:var(--panel);border:1px solid var(--line);color:var(--txt);border-radius:12px;padding:13px 14px;font:inherit;font-size:16px}
+textarea.in{resize:none}
+label.l{display:block;color:var(--mute);font-size:13px;font-weight:600;margin:16px 0 6px;letter-spacing:.06em;text-transform:uppercase}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.chip{background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:99px;padding:8px 13px;font-size:14px}
+.chip.on{background:var(--red);border-color:var(--red)}
+.note{color:var(--mute);font-size:14px;margin-top:10px;line-height:1.4}
+.note.ok{color:#7fe0b4}.note.bad{color:#ff8b93}
+.plist{display:grid;gap:8px}
+.pitem{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px;width:100%;color:var(--txt);text-align:left}
+.pitem .ic{font-size:24px;width:30px;text-align:center}
+.pitem .tt{flex:1;min-width:0}.pitem .tt b{display:block;font-size:15px}.pitem .tt small{color:var(--mute);font-size:12px}
+.pitem.new{box-shadow:0 0 0 2px var(--red) inset}
+.pitem.cur{border-color:var(--amber)}
+.reader .doc{font-size:15px;padding:1.2em 1.1em}
+.rbar{position:sticky;top:57px;z-index:2;display:flex;gap:8px;background:var(--bg);padding:6px 0 10px}
+.rbar .btn{margin:0;padding:11px 8px;font-size:14px}
+.susp{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px;margin-bottom:10px}
+.susp .h{display:flex;gap:12px;align-items:center}
+.susp .h b{font-size:16px}.susp .h small{display:block;color:var(--mute);font-size:13px}
+.susp p{margin:8px 0 0;font-size:14px;color:#c9cedb;line-height:1.4}
+.seg{display:flex;gap:6px;margin-top:10px}
+.seg button{flex:1;border:1px solid var(--line);background:var(--panel2);color:var(--mute);border-radius:10px;padding:8px 4px;font-size:13px;font-weight:700}
+.seg button.on.v{background:var(--red);color:#fff;border-color:var(--red)}
+.seg button.on.q{background:#596178;color:#fff}
+.seg button.on.e{background:var(--green);color:#fff;border-color:var(--green)}
+.opt{display:block;width:100%;text-align:left;background:var(--panel);border:1px solid var(--line);color:var(--txt);border-radius:12px;padding:13px 14px;margin-top:8px;font-size:15px}
+.opt.on{border-color:var(--amber);background:#2f2a1e}
+.tbox{background:linear-gradient(180deg,#2d2230,#231d27);border:1px solid #5a3a46;border-radius:16px;padding:16px}
+.tbox .lbl{color:#ff8b93;font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:800}
+.tbox .q{font-size:17px;font-weight:600;margin-top:6px;line-height:1.35}
+.hintp{margin-top:10px;background:rgba(230,168,58,.12);border-left:3px solid var(--amber);padding:8px 10px;border-radius:6px;font-size:14px;color:#f2dfb6}
+.center{text-align:center;padding:40px 10px;color:var(--mute)}
+.center .big{font-size:60px}
+.net{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:30px;z-index:9;font-size:17px}
+.net input{max-width:200px;text-align:center;font-size:28px;letter-spacing:.2em;text-transform:uppercase}
+</style>
+</head>
+<body>
+<div id="tv" class="hide"></div>
+<div id="ph" class="hide"></div>
+<div id="net" class="net hide"></div>
+<audio id="aud" preload="auto"></audio>
+<script src="../vendor/peerjs.min.js"></script>
+<script src="../vendor/qrcode.min.js"></script>
+<script>
+'use strict';
+/* =====================================================================
+   COUCH-KRIMI – ein KI-Kriminalfall für den Fernseher, die Handys sind die Ermittler-Akten.
+   Der Fernseher schreibt mit Gemini den Fall (Fallplan → Kapitel → Fotos → Stimmen), hält den Spielstand
+   und speichert alles in IndexedDB, damit ein Neuladen den Fall nicht beendet.
+   ===================================================================== */
+const APPV='2026-11-15k1';
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const now=()=>Date.now();
+const norm=s=>String(s==null?'':s).toLowerCase().replace(/ä/g,'ae').replace(/ö/g,'oe').replace(/ü/g,'ue').replace(/ß/g,'ss').replace(/[^a-z0-9]/g,'');
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const BASE=location.origin+location.pathname;
+const QS=new URLSearchParams(location.search);
+let ROOM=(QS.get('r')||location.hash.slice(1)||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,4);
+const MODE=ROOM||QS.has('join')?'phone':'tv';
+const COLORS=['#d23c46','#4c8dff','#3fb37f','#e6a83a','#a46bff','#ff7ab6'];
+const ICON={protokoll:'🗣️',chat:'💬',email:'✉️',brief:'📄',notiz:'📝',zeitung:'📰',liste:'📋',bericht:'🔬',foto:'📷',audio:'🎧',karte:'🗺️'};
+const TYPNAME={protokoll:'Vernehmung',chat:'Chatverlauf',email:'E-Mail',brief:'Brief',notiz:'Notiz',zeitung:'Zeitung',liste:'Liste',bericht:'Bericht',foto:'Foto',audio:'Tonaufnahme',karte:'Lageplan'};
+const MARKS={q:'offen',v:'verdächtig',e:'entlastet'};
+const fmtT=ms=>{const s=Math.max(0,Math.floor(ms/1000));return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`};
+
+/* ---------- Speicher am Fernseher (IndexedDB, Blobs für Bilder und Ton) ---------- */
+const DB={db:null,
+  open(){return this.db?Promise.resolve(this.db):new Promise((ok,no)=>{const r=indexedDB.open('couchkrimi',1);
+    r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>ok(this.db=r.result);r.onerror=()=>no(r.error)})},
+  async run(mode,fn){const db=await this.open();return new Promise((ok,no)=>{const tx=db.transaction('kv',mode),st=tx.objectStore('kv'),r=fn(st);
+    tx.oncomplete=()=>ok(r&&r.result);tx.onerror=()=>no(tx.error)})},
+  get(k){return this.run('readonly',s=>s.get(k)).catch(()=>null)},
+  set(k,v){return this.run('readwrite',s=>s.put(v,k)).catch(()=>null)},
+  clear(){return this.run('readwrite',s=>s.clear()).catch(()=>null)}};
+
+/* =====================================================================
+   GEMINI – Text (Fall), Bilder (Beweisfotos), Sprache (Tonaufnahmen)
+   Welche Modelle es gibt, fragt der Fernseher einmal bei Google ab und wählt die passenden aus.
+   ===================================================================== */
+const GEM={key:'',text:['gemini-3.5-flash-lite','gemini-3.1-flash-lite'],img:[],tts:[],listed:false,last:''};
+try{GEM.key=localStorage.getItem('ck_gem_key')||localStorage.getItem('cd_gem_key')||''}catch(e){}
+const API='https://generativelanguage.googleapis.com/v1beta/';
+const vnum=n=>{const m=n.match(/gemini-(\d+(?:\.\d+)?)/);return m?parseFloat(m[1]):0};
+async function listModels(){
+  if(GEM.listed||!GEM.key)return;
+  try{const r=await fetch(`${API}models?pageSize=1000&key=${encodeURIComponent(GEM.key)}`);if(!r.ok)return;
+    const d=await r.json(),ms=(d.models||[]).map(m=>({n:String(m.name||'').replace(/^models\//,''),g:(m.supportedGenerationMethods||[])}));
+    const gen=ms.filter(m=>m.g.includes('generateContent')),pre=n=>/preview|exp/.test(n)?.5:0;
+    const text=gen.filter(m=>/^gemini-\d/.test(m.n)&&!/tts|image|embed|live|audio|native|robot|computer|learnlm|thinking/.test(m.n));
+    const rank=n=>vnum(n)*10+(/flash-lite/.test(n)?1:/flash/.test(n)?2:/pro/.test(n)?0:-5)-pre(n)-(/-\d{3,}$/.test(n)?.2:0);
+    const best=text.map(m=>m.n).sort((a,b)=>rank(b)-rank(a));
+    // Für den Fall das beste „flash“, als Reserve die schnellen „flash-lite“
+    const flash=best.filter(n=>/flash/.test(n)&&!/lite/.test(n)).slice(0,1),lite=best.filter(n=>/flash-lite/.test(n)).slice(0,2);
+    if(flash.length||lite.length)GEM.text=[...flash,...lite];
+    GEM.tts=gen.filter(m=>/tts/.test(m.n)).map(m=>m.n).sort((a,b)=>(vnum(b)*10+(/flash/.test(b)?1:0))-(vnum(a)*10+(/flash/.test(a)?1:0))).slice(0,2);
+    GEM.img=[...gen.filter(m=>/image/.test(m.n)&&/gemini/.test(m.n)).map(m=>({n:m.n,k:'gem'})).sort((a,b)=>(vnum(b.n)*10+(/flash/.test(b.n)?1:0))-(vnum(a.n)*10+(/flash/.test(a.n)?1:0))),
+      ...ms.filter(m=>/^imagen/.test(m.n)&&m.g.includes('predict')).map(m=>({n:m.n,k:'imagen'}))].slice(0,3);
+    GEM.listed=true}catch(e){}}
+// Ein Aufruf mit Abbruch nach Leerlauf; Fehler tragen einen Code (rate_limited / bad_key / error)
+async function gemCall(model,body,{stream=false,idle=90000,method='generateContent'}={}){
+  GEM.last=model;
+  const url=`${API}models/${encodeURIComponent(model)}:${method==='generateContent'&&stream?'streamGenerateContent?alt=sse&':method+'?'}key=${encodeURIComponent(GEM.key)}`;
+  const ctl=new AbortController();let why='',t=null;const arm=()=>{clearTimeout(t);t=setTimeout(()=>{why=`keine Antwort nach ${idle/1000} s`;ctl.abort()},idle)};
+  try{arm();let res;
+    try{res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:ctl.signal})}
+    catch(e){throw Object.assign(new Error(why||e.message||'Netzwerkfehler'),{code:'error'})}
+    if(!res.ok){const d=await res.json().catch(()=>({})),m=(d.error&&d.error.message)||('HTTP '+res.status);
+      throw Object.assign(new Error(m),{code:res.status===429?'rate_limited':res.status===400?'bad_request':(res.status===401||res.status===403)?'bad_key':res.status===404?'no_model':'error',status:res.status})}
+    if(!stream)return await res.json();
+    const rd=res.body.getReader(),dec=new TextDecoder();let buf='',out='';
+    for(;;){arm();let r;try{r=await rd.read()}catch(e){throw Object.assign(new Error(why||'Verbindung abgebrochen'),{code:'error'})}
+      if(r.done)break;buf+=dec.decode(r.value,{stream:true});let i;
+      while((i=buf.indexOf('\n'))>=0){const line=buf.slice(0,i).trim();buf=buf.slice(i+1);
+        if(line.startsWith('data:')){try{const d=JSON.parse(line.slice(5));out+=partsOf(d).filter(p=>!p.thought).map(p=>p.text||'').join('')}catch(e){}}}
+      GEN.chars=out.length;genTick()}
+    return {candidates:[{content:{parts:[{text:out}]}}]}}
+  finally{clearTimeout(t)}}
+const partsOf=d=>(d&&d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.candidates[0].content.parts)||[];
+const parseLoose=t=>{try{return JSON.parse(t)}catch(e){const m=String(t).match(/\{[\s\S]*\}/);if(!m)return null;try{return JSON.parse(m[0])}catch(e2){return null}}};
+// JSON-Antwort, nacheinander über die Modell-Liste; bei „zu viele Anfragen“ kurz warten
+async function askJSON(prompt,{think=false,tries=4}={}){
+  let last;
+  for(let a=0;a<tries;a++){
+    const model=GEM.text[a%GEM.text.length];
+    const cfg={responseMimeType:'application/json',...(think?{}:{thinkingConfig:{thinkingBudget:0}})};
+    try{let d;
+      try{d=await gemCall(model,{contents:[{role:'user',parts:[{text:prompt}]}],generationConfig:cfg},{stream:true,idle:think?180000:90000})}
+      catch(e){if(e.code==='bad_request'&&cfg.thinkingConfig){delete cfg.thinkingConfig;d=await gemCall(model,{contents:[{role:'user',parts:[{text:prompt}]}],generationConfig:cfg},{stream:true,idle:180000})}else throw e}
+      const j=parseLoose(partsOf(d).map(p=>p.text||'').join(''));if(j)return j;last=new Error('Antwort war kein gültiges JSON')}
+    catch(e){last=e;if(e.code==='bad_key')throw e;if(e.code==='rate_limited')await sleep(15000*(a+1))}
+    await sleep(1500)}
+  throw last||new Error('keine Antwort')}
+
+/* ---------- Bilder ---------- */
+const b64ToBytes=b=>{const s=atob(b),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u};
+function shrink(blob,max=1280,q=.84){return new Promise(ok=>{const u=URL.createObjectURL(blob),im=new Image();
+  im.onload=()=>{const sc=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*sc);c.height=Math.round(im.height*sc);
+    c.getContext('2d').drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);c.toBlob(b=>ok(b||blob),'image/jpeg',q)};
+  im.onerror=()=>{URL.revokeObjectURL(u);ok(blob)};im.src=u})}
+async function genImage(prompt){
+  await listModels();if(!GEM.img.length)throw Object.assign(new Error('Kein Bildmodell für diesen Key freigeschaltet'),{code:'no_model'});
+  const full=`Photorealistic crime scene evidence photo, police forensic documentation style, natural light, slightly grainy, 4:3. ${prompt}. No text, no captions, no watermarks, no visible faces, no blood, no gore, no dead bodies.`;
+  let last;
+  for(const m of GEM.img){
+    for(const variant of [0,1,2]){
+      try{let d,b64,mime='image/png';
+        if(m.k==='imagen'){d=await gemCall(m.n,{instances:[{prompt:full}],parameters:{sampleCount:1,aspectRatio:'4:3'}},{method:'predict',idle:120000});
+          const p=(d.predictions||[])[0];b64=p&&p.bytesBase64Encoded;mime=(p&&p.mimeType)||mime}
+        else{const gc=variant===0?{responseModalities:['IMAGE','TEXT'],imageConfig:{aspectRatio:'4:3'}}:variant===1?{responseModalities:['IMAGE','TEXT']}:{responseModalities:['TEXT','IMAGE']};
+          d=await gemCall(m.n,{contents:[{role:'user',parts:[{text:full}]}],generationConfig:gc},{idle:120000});
+          const p=partsOf(d).find(x=>x.inlineData||x.inline_data),id=p&&(p.inlineData||p.inline_data);b64=id&&id.data;mime=(id&&(id.mimeType||id.mime_type))||mime}
+        if(!b64)throw Object.assign(new Error('Kein Bild in der Antwort (evtl. Inhaltsfilter)'),{code:'empty'});
+        return await shrink(new Blob([b64ToBytes(b64)],{type:mime}))}
+      catch(e){last=e;if(e.code==='bad_request'&&m.k==='gem'&&variant<2)continue;if(e.code==='rate_limited'){await sleep(20000);continue}break}}}
+  throw last||new Error('Bild fehlgeschlagen')}
+
+/* ---------- Stimmen ---------- */
+const VOICES={w:['Kore','Aoede','Leda','Despina','Sulafat','Callirrhoe','Erinome','Laomedeia','Achernar','Gacrux','Vindemiatrix','Pulcherrima'],
+  m:['Charon','Orus','Puck','Fenrir','Iapetus','Algieba','Umbriel','Enceladus','Schedar','Achird','Sadaltager','Rasalgethi']};
+const voiceMap={};
+function voiceFor(name,g){const k=norm(name);if(voiceMap[k])return voiceMap[k];const pool=VOICES[g==='w'||g==='f'?'w':'m'];
+  const used=new Set(Object.values(voiceMap));const v=pool.find(x=>!used.has(x))||pool[Object.keys(voiceMap).length%pool.length];return voiceMap[k]=v}
+function wav(pcm,rate){const b=new ArrayBuffer(44),v=new DataView(b),w=(o,s)=>[...s].forEach((c,i)=>v.setUint8(o+i,c.charCodeAt(0)));
+  w(0,'RIFF');v.setUint32(4,36+pcm.length,true);w(8,'WAVE');w(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);
+  v.setUint32(24,rate,true);v.setUint32(28,rate*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);w(36,'data');v.setUint32(40,pcm.length,true);
+  return new Blob([b,pcm],{type:'audio/wav'})}
+// Ein Abschnitt hat höchstens zwei Sprecher (Grenze der Gemini-Sprachausgabe); längere Gespräche werden zusammengesetzt
+async function ttsPart(lines,people,stil){
+  await listModels();if(!GEM.tts.length)throw Object.assign(new Error('Kein Sprachmodell für diesen Key freigeschaltet'),{code:'no_model'});
+  const names=[...new Set(lines.map(l=>l.s))];
+  const tag=s=>norm(s).slice(0,20)||'sprecher';
+  let text,speech;
+  if(names.length===1){text=`${stil?`Sprich auf Deutsch, ${stil}:\n`:'Sprich auf Deutsch:\n'}${lines.map(l=>l.t).join('\n')}`;
+    speech={voiceConfig:{prebuiltVoiceConfig:{voiceName:voiceFor(names[0],(people[names[0]]||{}).g)}}}}
+  else{text=`Lies dieses Gespräch auf Deutsch vor${stil?` (${stil})`:''}:\n`+lines.map(l=>`${tag(l.s)}: ${l.t}`).join('\n');
+    speech={multiSpeakerVoiceConfig:{speakerVoiceConfigs:names.map(n=>({speaker:tag(n),voiceConfig:{prebuiltVoiceConfig:{voiceName:voiceFor(n,(people[n]||{}).g)}}}))}}}
+  let last;
+  for(let a=0;a<4;a++){const m=GEM.tts[a%GEM.tts.length];
+    try{const d=await gemCall(m,{contents:[{role:'user',parts:[{text}]}],generationConfig:{responseModalities:['AUDIO'],speechConfig:speech}},{idle:150000});
+      const p=partsOf(d).find(x=>x.inlineData||x.inline_data),id=p&&(p.inlineData||p.inline_data);
+      if(!id||!id.data)throw Object.assign(new Error('Keine Tonspur in der Antwort'),{code:'empty'});
+      const rate=+((String(id.mimeType||id.mime_type||'').match(/rate=(\d+)/)||[])[1]||24000);return {pcm:b64ToBytes(id.data),rate}}
+    catch(e){last=e;if(e.code==='bad_key')throw e;if(e.code==='rate_limited')await sleep(25000*(a+1));else await sleep(2000)}}
+  throw last}
+async function genAudio(lines,people,stil){
+  const segs=[];let cur=[],set=new Set();
+  for(const l of lines){if(!set.has(l.s)&&set.size>=2){segs.push(cur);cur=[];set=new Set()}cur.push(l);set.add(l.s)}
+  if(cur.length)segs.push(cur);
+  const parts=[];let rate=24000;
+  for(const s of segs){const r=await ttsPart(s,people,stil);rate=r.rate;parts.push(r.pcm)}
+  const gap=new Uint8Array(Math.round(rate*.35)*2),all=[];parts.forEach((p,i)=>{if(i)all.push(gap);all.push(p)});
+  const len=all.reduce((a,p)=>a+p.length,0),pcm=new Uint8Array(len);let o=0;all.forEach(p=>{pcm.set(p,o);o+=p.length});
+  return wav(pcm,rate)}
+
+/* =====================================================================
+   FALL ERZEUGEN – Fallplan, dann Kapitel für Kapitel (Text → Fotos → Stimmen)
+   Kapitel 1 reicht zum Losspielen, der Rest entsteht im Hintergrund während der Ermittlung.
+   ===================================================================== */
+const DUR={45:4,60:5,90:7};
+const LEVEL={leicht:'leicht – klare Spuren, wenige falsche Fährten, Einsteiger',normal:'mittel – ein paar falsche Fährten, man muss kombinieren',schwer:'schwer – viele falsche Fährten, Details genau lesen, Profis'};
+function planPrompt(wish,min,lvl){const n=DUR[min]||5;
+  return `Du bist Autorin von Krimi-Fallakten zum Selbstermitteln. 2–6 Spieler arbeiten gemeinsam eine digitale Fallakte am Fernseher durch und lösen den Fall. Spieldauer ca. ${min} Minuten, Schwierigkeit: ${LEVEL[lvl]||LEVEL.normal}.
+Wunsch der Spieler: „${wish}“
+
+Entwirf einen ORIGINELLEN, logisch wasserdichten Kriminalfall auf Deutsch:
+- Schauplatz passend zum Wunsch, mit echten Orten (korrekte Koordinaten) und glaubwürdigen Details vor Ort.
+- 4 bis 5 Verdächtige (verdaechtig:true) mit nachvollziehbarem Motiv und Alibi; genau einer ist schuldig. Dazu 1–2 Zeugen (verdaechtig:false). Keine echten, lebenden Prominenten.
+- Fair Play: Alles zur Lösung steckt in den Beweisen. Der Täter wird erst durch die KOMBINATION mehrerer Beweise aus verschiedenen Kapiteln überführt (z. B. widerlegtes Alibi + Motiv + Spur). Mindestens zwei falsche Fährten, die sich auflösen lassen.
+- Genau 3 Kapitel mit je ${n} Beweisen. Jedes Kapitel endet mit einem Ermittlungsauftrag, dessen Antwort sich eindeutig aus den bis dahin freigeschalteten Beweisen ableiten lässt (nicht wörtlich in einem einzigen Beweis steht). Auftragstypen: "person" (Antwort ist eine Personen-ID), "auswahl" (genau 4 Optionen, Antwort ist eine davon), "code" (Zahl oder kurzes Wort, max. 12 Zeichen, z. B. PIN, Uhrzeit wie 23:40, Kennzeichen – entsteht durch Kombinieren). Nach Kapitel 3 folgt die Anklage (Täter, Motiv, Methode, entscheidender Beweis) – die Kapitelaufträge fragen deshalb noch NICHT direkt nach dem Täter.
+- Beweistypen: protokoll (Vernehmung), chat, email, brief, notiz (handschriftlich), zeitung, liste (Tabelle: Anrufliste, Kontoauszug, Kassenbon, Dienstplan, Fahrtenbuch …), bericht (Obduktion, Spurensicherung, Gutachten), foto, audio (Notruf, Mailbox, Mitschnitt – höchstens 2 Sprecher), karte (Lageplan). Je Kapitel genau 1 foto und genau 1 audio, im ganzen Fall genau 1 karte, sonst bunt gemischt.
+- "inhalt" beschreibt knapp, was im Beweis steht und welche Spur/falsche Fährte er enthält (für die Autorin der Kapitel, nicht für die Spieler).
+- "hinweise": 3 gestufte Tipps je Auftrag (sanft → deutlich → fast die Lösung), die auf konkrete Beweise verweisen.
+- "ermittler": die leitende Kommissarin/der Kommissar, die/der den Spielern die Aufträge gibt.
+
+Antworte ausschließlich mit JSON in genau dieser Form:
+{"titel":"…","ort":"Ort, Region","datum":"Wochentag, TT. Monat JJJJ","einleitung":"Einsatzbefehl an die Spieler, 4–6 Sätze, spannend, ohne Lösung","ermittler":{"name":"…","geschlecht":"w"},
+"opfer":{"name":"…","alter":54,"beschreibung":"…"},
+"personen":[{"id":"p1","name":"…","alter":40,"geschlecht":"w","rolle":"Ehefrau des Opfers","beschreibung":"1–2 Sätze, was die Spieler über die Person wissen","verdaechtig":true,"motiv":"geheim","alibi":"geheim"}],
+"kapitel":[{"titel":"…","beweise":[{"id":"e1","typ":"bericht","titel":"…","inhalt":"…"}],"auftrag":{"frage":"…","typ":"auswahl","optionen":["…","…","…","…"],"antwort":"…","hinweise":["…","…","…"],"erklaerung":"Warum das stimmt, 1–2 Sätze"}}],
+"loesung":{"taeter":"p3","motiv":"…","methode":"…","beweise":["e4","e9","e13"],"ablauf":"Vollständige Auflösung als Erzählung der Kommissarin, 8–12 Sätze"},
+"anklage":{"motive":["…","…","…","…"],"motiv":0,"methoden":["…","…","…","…"],"methode":0}}
+Beweis-IDs fortlaufend e1, e2, … über alle Kapitel. In "anklage" ist "motiv"/"methode" der Index der richtigen Option.`}
+function chapterPrompt(plan,k,prev){const ch=plan.kapitel[k],a=ch.auftrag;
+  return `Du schreibst die Beweisstücke für eine Krimi-Fallakte. Hier ist der vollständige, geheime Fallplan:
+${JSON.stringify({...plan,kapitel:plan.kapitel.map((c,i)=>i===k?c:{titel:c.titel,beweise:c.beweise.map(b=>({id:b.id,typ:b.typ,titel:b.titel,inhalt:b.inhalt}))})})}
+${prev?`\nBereits geschriebene Beweise der früheren Kapitel (bleib dazu konsistent – Namen, Uhrzeiten, Orte, Fakten):\n${prev}\n`:''}
+Schreibe jetzt VOLLSTÄNDIG die Beweise von Kapitel ${k+1} „${ch.titel}“: ${ch.beweise.map(b=>`${b.id} (${b.typ}) „${b.titel}“`).join(', ')}.
+Am Ende des Kapitels lautet der Auftrag: „${a.frage}“ – richtige Antwort: ${a.typ==='person'?((plan.personen.find(p=>p.id===a.antwort)||{}).name||a.antwort):a.antwort}. Die Beweise dieses und der früheren Kapitel müssen die Antwort eindeutig herleitbar machen, ohne sie direkt zu verraten.
+Schreib wie echte Akten: realistisch, konkrete Namen, Uhrzeiten, Adressen, Beträge – und auch belangloses Füllmaterial, damit man suchen muss. Verrate nie die Gesamtlösung.
+Felder je Typ (zusätzlich immer "id","typ","titel","untertitel" (Aktenzeichen/Absender/Quelle) und "datum"):
+- protokoll: "zeilen":[{"s":"Name oder 'Kommissarin'","t":"…"}] (12–20 Wortwechsel)
+- chat: "teilnehmer":["A","B"],"ich":"A","nachrichten":[{"von":"A","zeit":"21:14","t":"…"}] (8–16)
+- email: "von","an","betreff","text"
+- brief / notiz: "text", optional "unterschrift"
+- zeitung: "zeitung","ueberschrift","text"
+- liste: "spalten":["…"],"zeilen":[["…"]] (6–14 Zeilen),"text" optional
+- bericht: "felder":[{"k":"…","v":"…"}],"text"
+- foto: "bild": detaillierte Bildbeschreibung auf ENGLISCH für einen Bildgenerator (fotorealistisches Beweisfoto: Gegenstand/Ort, Perspektive, Licht; keine Menschen, kein Blut, keine Schrift), "text": Beschriftung der Spurensicherung auf Deutsch (1–3 Sätze, was zu sehen ist, inkl. aller Details, die man zum Lösen braucht)
+- audio: "art" (z. B. Notruf, Mailbox, Mitschnitt),"stil": Regieanweisung für die Sprecher (z. B. "aufgeregt, flüsternd"),"sprecher":[{"name":"…","geschlecht":"w"}] (1–2),"zeilen":[{"s":"Name","t":"…"}] (insgesamt höchstens 130 Wörter)
+- karte: "orte":[{"name":"…","lat":27.75,"lon":-15.57,"notiz":"…"}] (4–8 echte Orte mit korrekten Koordinaten)
+Texte 80–220 Wörter. Antworte ausschließlich mit JSON: {"beweise":[…]}`}
+
+const GEN={busy:false,steps:[],chars:0,err:'',errAt:0};
+let C=null;               // der Fall (Plan + geschriebene Kapitel), nur am Fernseher
+const IMG={},AUD={};      // Objekt-URLs der Fotos/Tonaufnahmen
+function genTick(){if(MODE==='tv'){clearTimeout(genTick.t);genTick.t=setTimeout(()=>{renderTV();pushAll()},400)}}
+function step(id,label,state,extra){const s=GEN.steps.find(x=>x.id===id);if(s)Object.assign(s,{label,state,extra});else GEN.steps.push({id,label,state,extra});genTick()}
+
+// Häufige KI-Ungenauigkeit: Name statt ID beim Täter oder bei Personen-Aufträgen
+function prePlan(p){if(!p||!Array.isArray(p.personen))return p;
+  const byName=v=>{const n=norm(v);const f=p.personen.find(x=>x&&(x.id===v||norm(x.name)===n||norm(x.name).includes(n)&&n.length>3));return f?f.id:v};
+  if(p.loesung)p.loesung.taeter=byName(p.loesung.taeter);
+  (p.kapitel||[]).forEach(c=>{if(c&&c.auftrag&&c.auftrag.typ==='person')c.auftrag.antwort=byName(c.auftrag.antwort)});return p}
+function checkPlan(p){
+  if(!p||typeof p!=='object')return 'leer';p=prePlan(p);
+  if(!Array.isArray(p.personen)||p.personen.length<3)return 'zu wenige Personen';
+  const ids=new Set(p.personen.map(x=>x&&x.id));
+  if(!p.loesung||!ids.has(p.loesung.taeter))return 'Täter fehlt';
+  if(!Array.isArray(p.kapitel)||p.kapitel.length<2)return 'zu wenige Kapitel';
+  for(const c of p.kapitel){if(!c||!Array.isArray(c.beweise)||c.beweise.length<2)return 'Kapitel ohne Beweise';
+    const a=c.auftrag;if(!a||!a.frage||a.antwort==null)return 'Auftrag fehlt';
+    if(a.typ==='person'&&!ids.has(a.antwort))return 'Auftrag: unbekannte Person';
+    if(a.typ==='auswahl'&&(!Array.isArray(a.optionen)||a.optionen.length<2))return 'Auftrag ohne Optionen'}
+  const an=p.anklage;if(!an||!Array.isArray(an.motive)||!Array.isArray(an.methoden))return 'Anklage fehlt';
+  return ''}
+function fixPlan(p){
+  p.titel=String(p.titel||'Ein rätselhafter Fall').slice(0,80);p.ort=String(p.ort||'').slice(0,80);p.datum=String(p.datum||'').slice(0,60);
+  p.ermittler=p.ermittler&&p.ermittler.name?p.ermittler:{name:'Kommissarin Weber',geschlecht:'w'};
+  p.personen=p.personen.filter(x=>x&&x.id&&x.name).slice(0,8).map(x=>({...x,geschlecht:/^(w|f)/i.test(x.geschlecht||'')?'w':'m',verdaechtig:x.verdaechtig!==false}));
+  let n=0;p.kapitel=p.kapitel.slice(0,4).map(c=>({...c,titel:String(c.titel||'Kapitel').slice(0,60),beweise:c.beweise.filter(b=>b&&b.id).map(b=>({...b,typ:ICON[b.typ]?b.typ:'notiz'})),
+    auftrag:{...c.auftrag,typ:['person','auswahl','code'].includes(c.auftrag.typ)?c.auftrag.typ:'code',hinweise:(Array.isArray(c.auftrag.hinweise)?c.auftrag.hinweise:[]).slice(0,3).map(String)}}));
+  p.kapitel.forEach(c=>{const a=c.auftrag;if(a.typ==='auswahl'){a.optionen=a.optionen.map(String).slice(0,5);if(typeof a.antwort==='number')a.antwort=a.optionen[a.antwort];
+    if(!a.optionen.some(o=>norm(o)===norm(a.antwort)))a.optionen[a.optionen.length-1]=String(a.antwort);a.optionen=shuffle(a.optionen)}});
+  const an=p.anklage;an.motive=an.motive.map(String).slice(0,4);an.methoden=an.methoden.map(String).slice(0,4);
+  an.motiv=Math.max(0,Math.min(an.motive.length-1,+an.motiv||0));an.methode=Math.max(0,Math.min(an.methoden.length-1,+an.methode||0));
+  // Reihenfolge mischen, damit die richtige Antwort nicht immer vorne steht
+  const mix=(arr,i)=>{const r=arr[i],s=shuffle(arr);return [s,s.indexOf(r)]};[an.motive,an.motiv]=mix(an.motive,an.motiv);[an.methoden,an.methode]=mix(an.methoden,an.methode);
+  p.loesung.beweise=(Array.isArray(p.loesung.beweise)?p.loesung.beweise:[]).map(String);
+  return p}
+function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+const evById=id=>{if(!C)return null;for(const c of C.kapitel)for(const b of c.beweise)if(b.id===id)return b;return null};
+const evText=b=>[b.titel,b.untertitel,b.datum,b.text,b.von,b.an,b.betreff,b.ueberschrift,b.unterschrift,
+  ...(b.zeilen||[]).map(z=>Array.isArray(z)?z.join(' '):`${z.s}: ${z.t}`),...(b.nachrichten||[]).map(m=>`${m.von} ${m.zeit}: ${m.t}`),
+  ...(b.felder||[]).map(f=>`${f.k}: ${f.v}`),...(b.orte||[]).map(o=>`${o.name}: ${o.notiz||''}`)].filter(Boolean).join('\n');
+
+async function saveCase(){if(C)await DB.set('case',C)}
+async function saveProg(){await DB.set('prog',{...K,toast:null,playing:null})}
+async function generate(){
+  if(GEN.busy||!C)return;GEN.busy=true;GEN.err='';
+  try{
+    if(!C.plan){
+      step('plan','Fallplan wird entworfen','now');
+      let p,why='';
+      for(let a=0;a<3;a++){p=await askJSON(planPrompt(C.wish,C.min,C.level),{think:true});why=checkPlan(p);if(!why)break;step('plan',`Fallplan unvollständig (${why}) – neuer Versuch`,'now')}
+      if(why)throw new Error('Fallplan unbrauchbar: '+why);
+      Object.assign(C,fixPlan(p));C.plan=true;
+      C.kapitel.forEach((c,i)=>{c.written=false;c.ready=false});await saveCase();
+      step('plan',`Fallplan: „${C.titel}“`,'ok');K.marks=Object.fromEntries(C.personen.filter(p=>p.verdaechtig).map(p=>[p.id,'q']));saveProg()}
+    // Einsatzbefehl als Ansage der Kommissarin
+    if(!C.briefAud){step('brief','Einsatzbefehl wird eingesprochen','now');
+      try{AUD.brief=URL.createObjectURL(await genAudioStore('aud:brief',[{s:C.ermittler.name,t:C.einleitung}],{[C.ermittler.name]:{g:C.ermittler.geschlecht}},'ernst, ruhig, wie eine Kommissarin beim Einsatzbefehl'));C.briefAud=true;step('brief','Einsatzbefehl eingesprochen','ok')}
+      catch(e){C.briefAud='x';step('brief','Einsatzbefehl nur als Text ('+shortErr(e)+')','bad')}
+      await saveCase()}
+    for(let k=0;k<C.kapitel.length;k++){const ch=C.kapitel[k];
+      if(!ch.written){step('k'+k,`Kapitel ${k+1}: Beweise werden geschrieben`,'now');
+        const prev=C.kapitel.slice(0,k).flatMap(c=>c.beweise).map(b=>`[${b.id}] ${evText(b)}`).join('\n\n').slice(0,24000);
+        let got=null;
+        for(let a=0;a<3&&!got;a++){const r=await askJSON(chapterPrompt(C,k,prev));const list=r&&Array.isArray(r.beweise)?r.beweise:Array.isArray(r)?r:[];
+          if(list.length>=Math.min(2,ch.beweise.length))got=list}
+        if(!got)throw new Error(`Kapitel ${k+1} kam leer zurück`);
+        ch.beweise=ch.beweise.map(b=>{const w=got.find(x=>x&&x.id===b.id)||got[ch.beweise.indexOf(b)]||{};
+          return cleanEv({...w,id:b.id,typ:ICON[w.typ]?w.typ:b.typ,titel:w.titel||b.titel,ch:k,plan:b.inhalt})});
+        ch.written=true;await saveCase();step('k'+k,`Kapitel ${k+1}: ${ch.beweise.length} Beweise geschrieben`,'ok')}
+      // Fotos und Tonaufnahmen dieses Kapitels
+      for(const b of ch.beweise){
+        if(b.typ==='foto'&&!b.media){step('m'+b.id,`Foto „${b.titel}“`,'now');
+          try{const bl=await genImage(b.bild||b.text||b.titel);await DB.set('img:'+b.id,bl);IMG[b.id]=URL.createObjectURL(bl);b.media='ok';step('m'+b.id,`Foto „${b.titel}“`,'ok')}
+          catch(e){b.media='x';b.mediaErr=shortErr(e);step('m'+b.id,`Foto „${b.titel}“ nur als Beschreibung (${shortErr(e)})`,'bad')}
+          await saveCase()}
+        if(b.typ==='audio'&&!b.media){step('m'+b.id,`Tonaufnahme „${b.titel}“`,'now');
+          const people={};(b.sprecher||[]).forEach(s=>people[s.name]={g:s.geschlecht});
+          try{AUD[b.id]=URL.createObjectURL(await genAudioStore('aud:'+b.id,b.zeilen,people,b.stil));b.media='ok';step('m'+b.id,`Tonaufnahme „${b.titel}“`,'ok')}
+          catch(e){b.media='x';b.mediaErr=shortErr(e);step('m'+b.id,`Tonaufnahme „${b.titel}“ nur als Abschrift (${shortErr(e)})`,'bad')}
+          await saveCase()}}
+      ch.ready=true;await saveCase();
+      if(k===0&&K.phase==='gen'){K.phase='ready';saveProg()}
+      if(K.waiting&&K.ch===k){K.waiting=false;unlockChapter(k)}
+      pushAll();renderTV()}
+    if(!C.solAud){step('sol','Auflösung wird eingesprochen','now');
+      try{AUD.sol=URL.createObjectURL(await genAudioStore('aud:sol',[{s:C.ermittler.name,t:C.loesung.ablauf}],{[C.ermittler.name]:{g:C.ermittler.geschlecht}},'ruhig und erzählend, wie bei der Auflösung eines Falls'));C.solAud=true;step('sol','Auflösung eingesprochen','ok')}
+      catch(e){C.solAud='x';step('sol','Auflösung nur als Text','bad')}
+      await saveCase()}
+  }catch(e){GEN.err=shortErr(e);GEN.errAt=now();step('err','Fehler: '+GEN.err,'bad')}
+  finally{GEN.busy=false;renderTV();pushAll()}}
+async function genAudioStore(key,lines,people,stil){
+  lines=(lines||[]).filter(l=>l&&l.t).map(l=>({s:String(l.s||'Sprecher'),t:String(l.t)}));if(!lines.length)throw new Error('kein Text');
+  const bl=await genAudio(lines,people,stil);await DB.set(key,bl);return bl}
+const shortErr=e=>String((e&&e.message)||e||'Fehler').replace(/\s+/g,' ').slice(0,110);
+// Nur erlaubte Felder, alles als Text (die Anzeige escaped ohnehin)
+function cleanEv(b){const s=v=>v==null?'':String(v).slice(0,4000),arr=v=>Array.isArray(v)?v:[];
+  const o={id:b.id,typ:b.typ,ch:b.ch,titel:s(b.titel).slice(0,90),untertitel:s(b.untertitel).slice(0,120),datum:s(b.datum).slice(0,60),plan:b.plan};
+  switch(b.typ){
+    case 'protokoll':o.zeilen=arr(b.zeilen).filter(z=>z&&z.t).slice(0,40).map(z=>({s:s(z.s).slice(0,40),t:s(z.t)}));break;
+    case 'chat':o.teilnehmer=arr(b.teilnehmer).map(s).slice(0,4);o.ich=s(b.ich);o.nachrichten=arr(b.nachrichten).filter(m=>m&&m.t).slice(0,40).map(m=>({von:s(m.von).slice(0,40),zeit:s(m.zeit).slice(0,20),t:s(m.t)}));break;
+    case 'email':Object.assign(o,{von:s(b.von),an:s(b.an),betreff:s(b.betreff),text:s(b.text)});break;
+    case 'brief':case 'notiz':Object.assign(o,{text:s(b.text),unterschrift:s(b.unterschrift)});break;
+    case 'zeitung':Object.assign(o,{zeitung:s(b.zeitung),ueberschrift:s(b.ueberschrift),text:s(b.text)});break;
+    case 'liste':o.spalten=arr(b.spalten).map(s).slice(0,8);o.zeilen=arr(b.zeilen).filter(Array.isArray).slice(0,30).map(r=>r.map(s).slice(0,8));o.text=s(b.text);break;
+    case 'bericht':o.felder=arr(b.felder).filter(f=>f&&f.k).slice(0,20).map(f=>({k:s(f.k).slice(0,60),v:s(f.v)}));o.text=s(b.text);break;
+    case 'foto':o.bild=s(b.bild).slice(0,1500);o.text=s(b.text);break;
+    case 'audio':Object.assign(o,{art:s(b.art),stil:s(b.stil).slice(0,200),sprecher:arr(b.sprecher).slice(0,4).map(x=>({name:s(x&&x.name).slice(0,40),geschlecht:/^(w|f)/i.test((x&&x.geschlecht)||'')?'w':'m'})),zeilen:arr(b.zeilen).filter(z=>z&&z.t).slice(0,30).map(z=>({s:s(z.s).slice(0,40),t:s(z.t)}))});break;
+    case 'karte':o.orte=arr(b.orte).filter(x=>x&&isFinite(+x.lat)&&isFinite(+x.lon)).slice(0,10).map(x=>({name:s(x.name).slice(0,60),lat:+x.lat,lon:+x.lon,notiz:s(x.notiz).slice(0,200)}));o.text=s(b.text);break;
+    default:o.text=s(b.text||b.plan)}
+  return o}
+
+/* =====================================================================
+   DOKUMENTE ANZEIGEN (gleich auf Fernseher und Handy)
+   ===================================================================== */
+const mX=lon=>(lon+180)/360,mY=lat=>{const t=Math.sin(Math.max(-85,Math.min(85,lat))*Math.PI/180);return .5-Math.log((1+t)/(1-t))/(4*Math.PI)};
+function mapSVG(orte){const W=800,H=560;if(!orte.length)return '';
+  const xs=orte.map(o=>mX(o.lon)),ys=orte.map(o=>mY(o.lat));let x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);
+  const span=Math.max(x1-x0,(y1-y0)*W/H,2e-4)*1.35,cx=(x0+x1)/2,cy=(y0+y1)/2,sc=W/span;
+  const z=Math.max(2,Math.min(17,Math.round(Math.log2(sc/256)))),n=2**z,ts=sc/n;let t='';
+  const vx0=cx-W/2/sc,vx1=cx+W/2/sc,vy0=cy-H/2/sc,vy1=cy+H/2/sc;
+  for(let ty=Math.floor(vy0*n);ty<=Math.floor(vy1*n);ty++){if(ty<0||ty>=n)continue;for(let tx=Math.floor(vx0*n);tx<=Math.floor(vx1*n);tx++){const wx=((tx%n)+n)%n;
+    t+=`<image href="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${ty}/${wx}" x="${(W/2+(tx/n-cx)*sc).toFixed(1)}" y="${(H/2+(ty/n-cy)*sc).toFixed(1)}" width="${(ts+.8).toFixed(1)}" height="${(ts+.8).toFixed(1)}"/>`}}
+  const pins=orte.map((o,i)=>{const x=W/2+(mX(o.lon)-cx)*sc,y=H/2+(mY(o.lat)-cy)*sc;
+    return `<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)})"><circle r="15" fill="#d23c46" stroke="#fff" stroke-width="3"/><text y="6" text-anchor="middle" font-size="17" font-weight="800" fill="#fff" font-family="Inter,sans-serif">${i+1}</text></g>`}).join('');
+  return `<svg viewBox="0 0 ${W} ${H}"><rect width="${W}" height="${H}" fill="#1d3b5c"/>${t}${pins}<text x="${W-8}" y="${H-8}" text-anchor="end" font-size="12" fill="#fff" opacity=".8" font-family="Inter,sans-serif">Bilder © Esri</text></svg>`}
+function docHTML(b,{img='',playing=false,heard=true}={}){
+  if(!b)return '';
+  const head=`<h3>${esc(b.titel)}</h3><div class="sub">${esc([TYPNAME[b.typ],b.untertitel,b.datum].filter(Boolean).join(' · '))}</div>`;
+  const P=t=>t?`<p>${esc(t)}</p>`:'';
+  switch(b.typ){
+    case 'protokoll':return `<div class="doc protokoll"><div class="stamp">VERNEHMUNG</div>${head}<div class="qa">${(b.zeilen||[]).map(z=>`<b>${esc(z.s)}:</b><span>${esc(z.t)}</span>`).join('')}</div></div>`;
+    case 'chat':return `<div class="doc chat">${head}<div class="chatwrap">${(b.nachrichten||[]).map(m=>`<div class="bub ${norm(m.von)===norm(b.ich)?'me':''}"><i>${esc(m.von)}</i>${esc(m.t)}<u>${esc(m.zeit)}</u></div>`).join('')}</div></div>`;
+    case 'email':return `<div class="doc email">${head}<div class="kv"><b>Von</b><span>${esc(b.von)}</span><b>An</b><span>${esc(b.an)}</span><b>Betreff</b><span>${esc(b.betreff)}</span></div>${P(b.text)}</div>`;
+    case 'brief':return `<div class="doc brief">${head}${P(b.text)}${b.unterschrift?`<p style="font-family:Caveat,cursive;font-size:1.5em">${esc(b.unterschrift)}</p>`:''}</div>`;
+    case 'notiz':return `<div class="doc notiz">${P(b.text)}${b.unterschrift?`<p>– ${esc(b.unterschrift)}</p>`:''}<div class="sub" style="font-size:.6em">${esc(b.titel)}</div></div>`;
+    case 'zeitung':return `<div class="doc zeitung"><div class="zt">${esc(b.zeitung||'Tageblatt')}</div><div class="sub">${esc(b.datum)}</div><h3>${esc(b.ueberschrift||b.titel)}</h3>${P(b.text)}</div>`;
+    case 'liste':return `<div class="doc liste">${head}<table><tr>${(b.spalten||[]).map(c=>`<th>${esc(c)}</th>`).join('')}</tr>${(b.zeilen||[]).map(r=>`<tr>${r.map(c=>`<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</table>${P(b.text)}</div>`;
+    case 'bericht':return `<div class="doc bericht"><div class="stamp">VERTRAULICH</div>${head}<div class="kv">${(b.felder||[]).map(f=>`<b>${esc(f.k)}</b><span>${esc(f.v)}</span>`).join('')}</div>${P(b.text)}</div>`;
+    case 'foto':return `<div class="doc foto">${img?`<img src="${img}" alt="">`:`<div class="ph">${b.media==='x'?'📷 Foto nicht verfügbar – siehe Beschreibung der Spurensicherung':'📷 Foto wird geladen …'}</div>`}<div class="cap">${esc(b.titel)}${b.text?' – '+esc(b.text):''}</div></div>`;
+    case 'audio':return `<div class="doc audio">${head}<div class="wave ${playing?'on':''}">${Array.from({length:40},(_,i)=>`<i style="animation-delay:${(i*37%100)/100}s"></i>`).join('')}</div>
+      ${heard?(b.zeilen||[]).map(z=>`<div class="line"><b>${esc(z.s)}:</b> ${esc(z.t)}</div>`).join(''):`<div class="lock">${b.media==='x'?'':'🎧 Abschrift erscheint, sobald die Aufnahme einmal am Fernseher lief.'}</div>`}
+      ${b.media==='x'?`<div class="lock" style="color:var(--mute)">(Tonaufnahme nicht verfügbar – hier die Abschrift)</div>`:''}</div>`;
+    case 'karte':return `<div class="doc karte">${head}${mapSVG(b.orte||[])}<div class="qa" style="margin-top:.8em">${(b.orte||[]).map((o,i)=>`<b>${i+1}</b><span>${esc(o.name)}${o.notiz?' – '+esc(o.notiz):''}</span>`).join('')}</div>${P(b.text)}</div>`;
+    default:return `<div class="doc">${head}${P(b.text)}</div>`}}
+
+/* =====================================================================
+   SPIELSTAND (Fernseher)
+   ===================================================================== */
+let K={phase:'lobby',wish:'',min:60,level:'normal',ch:0,unlocked:[],heard:[],hints:{},wrong:{},solved:[],shown:null,scrollAt:0,marks:{},
+  elapsed:0,runAt:0,waiting:false,toast:null,result:null,seenBy:{}};
+const P=[];                // Spieler {id,name,color,joined,cid}
+let hostId=null;
+const host=()=>P.find(p=>p.id===hostId);
+const elapsed=()=>K.elapsed+(K.runAt?now()-K.runAt:0);
+function toast(t){K.toast={t,at:now()};renderTV();setTimeout(()=>{if(K.toast&&now()-K.toast.at>=3900){K.toast=null;renderTV()}},4000)}
+function unlockChapter(k){const ch=C.kapitel[k];if(!ch.ready){K.waiting=true;return}
+  ch.beweise.forEach(b=>{if(!K.unlocked.includes(b.id))K.unlocked.push(b.id)});K.ch=k;K.waiting=false;saveProg()}
+function startClock(){if(!K.runAt)K.runAt=now()}
+function score(){let s=100;Object.values(K.hints).forEach(n=>s-=5*n);Object.values(K.wrong).forEach(n=>s-=10*n);
+  if(K.result){const r=K.result;if(!r.taeter)return 0;if(!r.motiv)s-=10;if(!r.methode)s-=10;if(!r.beweis)s-=10}return Math.max(0,s)}
+const curTask=()=>C&&C.kapitel[K.ch]&&C.kapitel[K.ch].auftrag;
+function checkAnswer(a,v){const want=a.typ==='person'?a.antwort:String(a.antwort);
+  if(a.typ==='person')return v===want;
+  if(a.typ==='auswahl')return norm(v)===norm(want);
+  const n=norm(v),w=norm(want);if(n===w)return true;
+  // Uhrzeit/Zahlen: nur die Ziffern vergleichen (23:40 = 2340), Wörter auch ohne Artikel
+  const tm=x=>{const m=String(x).match(/(\d{1,2})\s*[:.h]\s*(\d{2})/);return m?(+m[1])*60+(+m[2]):null};
+  if(/^\s*\d{1,2}\s*[:.]\s*\d{2}\s*(uhr)?\s*$/i.test(String(want))){const a1=tm(want),b1=tm(v)??(/^\d{3,4}$/.test(String(v).replace(/\D/g,''))?tm(String(v).replace(/\D/g,'').padStart(4,'0').replace(/(\d\d)(\d\d)/,'$1:$2')):null);return a1!=null&&a1===b1}
+  const d=s=>String(s).replace(/\D/g,'').replace(/^0+(?=\d)/,'');if(/^[\d\s:.,\-/]+$/.test(String(want).trim())&&d(want).length>=2)return d(v)===d(want);
+  return w.length>3&&n.length>=w.length-1&&(n.endsWith(w)||w.endsWith(n))}
+
+/* ---------- Nachrichten der Handys ---------- */
+function handle(pid,m){
+  const p=P[pid];if(!p)return;const isHost=pid===hostId;
+  switch(m.type){
+    case 'join':{const name=String(m.name||'').trim().slice(0,16);if(!name)return;
+      p.name=name;if(!p.joined){p.joined=true;p.color=COLORS[P.filter(x=>x.joined).length-1]||COLORS[pid%COLORS.length]}
+      if(hostId==null||!P[hostId]||!P[hostId].joined)hostId=pid;break}
+    case 'wish':if(!isHost||!['lobby','ready'].includes(K.phase)&&K.phase!=='gen')return;K.wish=String(m.v||'').slice(0,200);try{localStorage.setItem('ck_wish',K.wish)}catch(e){}break;
+    case 'opts':if(!isHost||K.phase!=='lobby')return;if(DUR[m.min])K.min=m.min;if(LEVEL[m.level])K.level=m.level;break;
+    case 'gemSet':if(!isHost||typeof m.key!=='string'||m.key.length>200)return;setKey(m.key.trim());break;
+    case 'create':if(!isHost||K.phase!=='lobby'||!GEM.key||!K.wish.trim())return;newCase();break;
+    case 'retry':if(!isHost||GEN.busy||!C)return;GEN.steps=GEN.steps.filter(s=>s.id!=='err');generate();break;
+    case 'discard':if(!isHost)return;discardCase();break;
+    case 'begin':if(!isHost||K.phase!=='ready')return;K.phase='briefing';unlockChapter(0);playAudio('brief');saveProg();break;
+    case 'toFile':if(!isHost||K.phase!=='briefing')return;K.phase='play';stopAudio();startClock();saveProg();break;
+    case 'show':{if(!['play','briefing','accuse'].includes(K.phase)||!K.unlocked.includes(m.id))return;
+      if(K.phase==='briefing'){K.phase='play';stopAudio();startClock()}
+      K.shown=m.id;K.scrollAt=0;const b=evById(m.id);toast(`${p.name} zeigt: ${b?b.titel:''}`);break}
+    case 'hideShown':K.shown=null;break;
+    case 'scroll':{const v=$('#vscroll');if(v)v.scrollBy(0,(m.d>0?1:-1)*v.clientHeight*.7);return}
+    case 'play':{if(!K.unlocked.includes(m.id)&&m.id!=='brief'&&m.id!=='sol')return;
+      if(K.phase==='briefing'&&m.id!=='brief'){K.phase='play';startClock()}
+      if(m.id!=='brief'&&m.id!=='sol')K.shown=m.id;playAudio(m.id);break}
+    case 'stop':stopAudio();break;
+    case 'mark':if(!C||!K.marks.hasOwnProperty(m.id)||!MARKS[m.v])return;K.marks[m.id]=m.v;saveProg();break;
+    case 'hint':{if(K.phase!=='play'||K.waiting)return;const a=curTask();if(!a)return;const n=K.hints[K.ch]||0;if(n>=a.hinweise.length)return;
+      K.hints[K.ch]=n+1;toast(`💡 ${p.name} hat einen Tipp genommen`);saveProg();break}
+    case 'answer':{if(K.phase!=='play'||K.waiting)return;const a=curTask();if(!a)return;
+      if(checkAnswer(a,m.v)){K.solved.push(K.ch);const last=K.ch>=C.kapitel.length-1;
+        K.flash={ok:true,t:a.erklaerung||'',by:p.name,at:now(),next:last?'Zeit für die Anklage!':`Kapitel ${K.ch+2}: „${C.kapitel[K.ch+1].titel}“`};
+        if(last){K.phase='accuse'}else unlockChapter(K.ch+1);
+        K.newFrom=K.unlocked.length}
+      else{K.wrong[K.ch]=(K.wrong[K.ch]||0)+1;K.flash={ok:false,by:p.name,at:now(),v:String(m.v).slice(0,40)}}
+      saveProg();setTimeout(()=>{if(K.flash&&now()-K.flash.at>=5900){K.flash=null;renderTV();pushAll()}},6000);break}
+    case 'accuse':{if(K.phase!=='accuse')return;const an=C.anklage;
+      K.result={taeter:m.taeter===C.loesung.taeter,motiv:+m.motiv===an.motiv,methode:+m.methode===an.methode,beweis:C.loesung.beweise.includes(m.beweis),
+        pick:{taeter:m.taeter,motiv:+m.motiv,methode:+m.methode,beweis:m.beweis},by:p.name};
+      K.elapsed=elapsed();K.runAt=0;K.phase='end';K.score=score();saveProg();setTimeout(()=>playAudio('sol'),2500);break}
+    case 'newGame':if(!isHost||K.phase!=='end')return;discardCase();break;
+    case 'getEv':{const b=evById(m.id);if(!b||!K.unlocked.includes(m.id))return;
+      tell(pid,{t:'ev',ev:pubEv(b)});if(b.typ==='foto'&&IMG[b.id])sendImg(pid,b.id);return}
+    default:return}
+  renderTV();pushAll()}
+// Für die Handys: keine Planungsnotizen, Abschrift erst nach dem Abspielen
+function pubEv(b){const o={...b};delete o.plan;delete o.bild;if(b.typ==='audio'&&b.media==='ok'&&!K.heard.includes(b.id))delete o.zeilen;return o}
+async function sendImg(pid,id){
+  const src=await DB.get('img:'+id);if(!src)return;const sm=await shrink(src,900,.72);
+  const url=await new Promise(ok=>{const r=new FileReader();r.onload=()=>ok(r.result);r.readAsDataURL(sm)});
+  const n=Math.ceil(url.length/48000);for(let i=0;i<n;i++)tell(pid,{t:'img',id,i,n,d:url.slice(i*48000,(i+1)*48000)})}
+
+/* ---------- Ton am Fernseher ---------- */
+let PLAYING=null;
+async function playAudio(id){const a=$('#aud');let url=AUD[id];
+  if(!url){const bl=await DB.get(id==='brief'?'aud:brief':id==='sol'?'aud:sol':'aud:'+id);if(bl)url=AUD[id]=URL.createObjectURL(bl)}
+  if(!url){if(id!=='brief'&&id!=='sol'&&!K.heard.includes(id)){K.heard.push(id);saveProg()}renderTV();pushAll();return}
+  a.src=url;a.currentTime=0;PLAYING=id;a.play().catch(()=>{});renderTV();pushAll()}
+function stopAudio(){const a=$('#aud');a.pause();PLAYING=null;renderTV();pushAll()}
+$('#aud').addEventListener('ended',()=>{const id=PLAYING;PLAYING=null;if(id&&id!=='brief'&&id!=='sol'&&!K.heard.includes(id)){K.heard.push(id);saveProg()}renderTV();pushAll()});
+$('#aud').addEventListener('play',()=>{const id=PLAYING;if(id&&id!=='brief'&&id!=='sol'&&!K.heard.includes(id)){setTimeout(()=>{if(PLAYING===id&&!K.heard.includes(id)){K.heard.push(id);saveProg();pushAll()}},4000)}});
+
+/* ---------- Neuer Fall / Verwerfen / Fortsetzen ---------- */
+async function newCase(){
+  await DB.clear();Object.keys(IMG).forEach(k=>delete IMG[k]);Object.keys(AUD).forEach(k=>delete AUD[k]);
+  C={wish:K.wish.trim(),min:K.min,level:K.level,plan:false,kapitel:[]};
+  Object.assign(K,{phase:'gen',ch:0,unlocked:[],heard:[],hints:{},wrong:{},solved:[],shown:null,marks:{},elapsed:0,runAt:0,waiting:false,result:null,flash:null});
+  GEN.steps=[];await saveCase();await saveProg();generate()}
+async function discardCase(){stopAudio();await DB.clear();C=null;GEN.steps=[];GEN.err='';
+  Object.assign(K,{phase:'lobby',ch:0,unlocked:[],heard:[],hints:{},wrong:{},solved:[],shown:null,marks:{},elapsed:0,runAt:0,waiting:false,result:null,flash:null});renderTV();pushAll()}
+async function resume(){
+  const c=await DB.get('case'),pr=await DB.get('prog');if(!c)return;C=c;
+  if(pr)Object.assign(K,pr,{runAt:0,toast:null,flash:null});
+  for(const ch of C.kapitel||[])for(const b of ch.beweise||[]){
+    if(b.typ==='foto'&&b.media==='ok'){const bl=await DB.get('img:'+b.id);if(bl)IMG[b.id]=URL.createObjectURL(bl);else b.media=null}
+    if(b.typ==='audio'&&b.media==='ok'&&!(await DB.get('aud:'+b.id)))b.media=null}
+  if(K.phase==='gen'&&C.kapitel[0]&&C.kapitel[0].ready)K.phase='ready';
+  if(['play'].includes(K.phase))startClock();
+  // Unfertiges weiterschreiben
+  if(!C.plan||C.kapitel.some(c=>!c.ready)||!C.solAud){GEN.steps=[{id:'res',label:'Fall wird weiter vorbereitet …',state:'now'}];generate()}}
+function setKey(key){GEM.key=key;GEM.listed=false;try{key?localStorage.setItem('ck_gem_key',key):localStorage.removeItem('ck_gem_key')}catch(e){}
+  K.keyMsg={t:'Teste den Key …',ok:null};renderTV();pushAll();
+  listModels().then(()=>{K.keyMsg=GEM.listed?{t:`Key funktioniert ✓ · Text: ${GEM.text[0]} · Bild: ${GEM.img[0]?GEM.img[0].n:'—'} · Stimme: ${GEM.tts[0]||'—'}`,ok:true}:{t:'Key konnte nicht geprüft werden – stimmt er?',ok:false};renderTV();pushAll()})}
+
+/* =====================================================================
+   FERNSEHER ZEICHNEN
+   ===================================================================== */
+const dot=p=>`<span class="dot" style="background:${p.color}">${esc((p.name||'?')[0].toUpperCase())}</span>`;
+function qrSVG(){if(!ROOM||typeof qrcode==='undefined')return '';if(qrSVG.k===ROOM)return qrSVG.c;
+  const q=qrcode(0,'M');q.addData(BASE+'?r='+ROOM);q.make();const n=q.getModuleCount();let s='';
+  for(let y=0;y<n;y++)for(let x=0;x<n;x++)if(q.isDark(y,x))s+=`<rect x="${x}" y="${y}" width="1.03" height="1.03"/>`;
+  qrSVG.k=ROOM;return qrSVG.c=`<svg viewBox="-2 -2 ${n+4} ${n+4}" shape-rendering="crispEdges"><rect x="-2" y="-2" width="${n+4}" height="${n+4}" fill="#fff"/><g fill="#1b1e26">${s}</g></svg>`}
+function stepsHTML(){return `<div class="steps">${GEN.steps.map(s=>`<div class="${s.state}">${s.state==='now'?'<span class="spin"></span>':s.state==='ok'?'✅':'⚠️'} ${esc(s.label)}</div>`).join('')}${GEN.busy&&GEN.chars?`<div>✍️ ${(GEN.chars/1000).toFixed(1)}k Zeichen geschrieben …</div>`:''}</div>`}
+function renderTV(){
+  if(MODE!=='tv')return;const tv=$('#tv');const joined=P.filter(p=>p.joined);
+  const hdr=`<div class="tvh"><div class="brand">Couch-<b>Krimi</b></div>${C&&C.plan?`<div class="pill">🗂️ <b>${esc(C.titel)}</b></div>`:''}<div class="grow"></div>
+    ${K.phase==='play'||K.phase==='accuse'?`<div class="pill">Kapitel <b>${Math.min(K.ch+1,C.kapitel.length)}/${C.kapitel.length}</b></div><div class="pill">⏱ <b id="clock">${fmtT(elapsed())}</b></div><div class="pill">⭐ <b>${score()}</b></div>`:''}
+    ${ROOM?`<div class="pill">Raum <b>${ROOM}</b></div>`:''}</div>`;
+  let body='';
+  if(['lobby','gen','ready'].includes(K.phase)){
+    const right=K.phase==='lobby'?`<h1>Ein Fall für euch.</h1><p class="lead">Scannt den Code mit euren Handys. Der Gastgeber beschreibt den Fall – z. B. „Mord auf Gran Canaria“ oder „Skandal in Stuttgart“ – und die KI schreibt Akten, Beweisfotos und Tonaufnahmen. Ermittelt gemeinsam, ca. 1 Stunde.</p>`
+      :`<div class="card casecard">${C&&C.plan?`<h2>${esc(C.titel)}</h2><div class="meta">📍 ${esc(C.ort)} · ${esc(C.datum)}</div>`:`<h2>Neuer Fall</h2><div class="meta">„${esc(C?C.wish:K.wish)}“</div>`}
+        ${stepsHTML()}${K.phase==='ready'?`<div class="hintline">🔎 Kapitel 1 ist bereit – der Gastgeber startet die Ermittlung. Der Rest entsteht, während ihr ermittelt.</div>`:''}
+        ${GEN.err&&!GEN.busy?`<div class="hintline" style="color:var(--red)">Der Gastgeber kann es am Handy erneut versuchen.</div>`:''}</div>`;
+    body=`<div class="lobby"><div class="qrbox">${qrSVG()}<div class="u">Mit dem Handy scannen · Raumcode</div><div class="code">${ROOM||'…'}</div><div class="u">${esc(BASE.replace(/^https?:\/\//,''))}</div></div>
+      <div class="lob-r"><div class="players">${joined.length?joined.map(p=>`<div class="pl">${dot(p)}${esc(p.name)}${p.id===hostId?' 👑':''}</div>`).join(''):'<div class="pl" style="color:var(--mute)">Noch keine Ermittler …</div>'}</div>${right}
+      ${K.phase==='lobby'&&!GEM.key?`<div class="card" style="margin-top:20px;font-size:24px;color:var(--mute)">🔑 Der Gastgeber trägt am Handy einmal einen Gemini-API-Key ein (kostenlos bei Google AI Studio). Er bleibt nur auf diesem Fernseher.</div>`:''}
+      ${K.phase==='lobby'&&K.keyMsg?`<div class="hintline" style="color:${K.keyMsg.ok?'var(--green)':K.keyMsg.ok===false?'var(--red)':'var(--mute)'}">${esc(K.keyMsg.t)}</div>`:''}</div></div>`}
+  else if(K.phase==='briefing'){
+    body=`<div class="brief"><div class="file"><div class="stamp">EINSATZBEFEHL</div><h2>${esc(C.titel)}</h2><div class="meta">📍 ${esc(C.ort)} · ${esc(C.datum)} · Leitung: ${esc(C.ermittler.name)}</div><p>${esc(C.einleitung)}</p>
+      <div class="meta" style="margin:26px 0 0">Opfer: <b>${esc(C.opfer&&C.opfer.name)}</b>${C.opfer&&C.opfer.alter?`, ${esc(C.opfer.alter)} Jahre`:''} – ${esc(C.opfer&&C.opfer.beschreibung)}</div>
+      <div class="meta" style="margin:16px 0 0">${PLAYING==='brief'?'🔊 Die Kommissarin spricht …':'📱 Öffnet die Akte auf euren Handys.'}</div></div></div>`}
+  else if(K.phase==='play'||K.phase==='accuse'){
+    const list=C.kapitel.map((c,k)=>{if(k>K.ch&&!c.beweise.some(b=>K.unlocked.includes(b.id)))return '';
+      const vis=c.beweise.filter(b=>K.unlocked.includes(b.id)&&(k>=K.ch||b.id===K.shown||PLAYING===b.id));
+      return `<div class="chsep">Kapitel ${k+1} · ${esc(c.titel)}${k<K.ch?` · ${c.beweise.length} Beweise`:''}</div>`+vis.map(b=>`<div class="ev ${K.shown===b.id?'cur':''}"><span class="ic">${ICON[b.typ]}</span><div>${esc(b.titel)}<small>${esc(TYPNAME[b.typ])}${b.typ==='audio'&&!K.heard.includes(b.id)?' · noch nicht gehört':''}</small></div></div>`).join('')}).join('');
+    const b=K.shown&&evById(K.shown);
+    const viewer=b?`<div class="vscroll" id="vscroll">${docHTML(b,{img:IMG[b.id],playing:PLAYING===b.id,heard:K.heard.includes(b.id)||b.media!=='ok'})}</div>`
+      :`<div class="empty"><div class="big">🔎</div>Öffnet am Handy einen Beweis und tippt „Am TV zeigen“.<br><span style="font-size:24px">Tonaufnahmen laufen hier über den Fernseher.</span></div>`;
+    const a=curTask(),nh=K.hints[K.ch]||0;
+    const task=K.phase==='accuse'?`<div class="task"><div class="lbl">Anklage</div><div class="q">Wer war es, warum und wie? Erhebt am Handy Anklage – mit dem entscheidenden Beweis.</div></div>`
+      :K.waiting?`<div class="task"><div class="lbl">Spurensicherung</div><div class="q">Die neuen Beweise werden noch ausgewertet …</div><div style="margin-top:10px;font-size:20px;color:var(--mute)">${esc((GEN.steps.filter(s=>s.state==='now').pop()||{}).label||'')}</div></div>`
+      :a?`<div class="task"><div class="lbl">Auftrag · Kapitel ${K.ch+1}</div><div class="q">${esc(a.frage)}</div>${a.typ==='auswahl'?`<div class="opts">${a.optionen.map(o=>`<div>• ${esc(o)}</div>`).join('')}</div>`:''}
+        ${a.hinweise.slice(0,nh).map((h,i)=>`<div class="hint">💡 Tipp ${i+1}: ${esc(h)}</div>`).join('')}</div>`:'';
+    const sus=`<h4>Verdächtige</h4><div class="sus">${C.personen.filter(p=>p.verdaechtig).map(p=>{const mk=K.marks[p.id]||'q';
+      return `<div class="su"><span class="dot" style="background:#596178">${esc(p.name[0])}</span><div><div class="nm">${esc(p.name)}</div><div class="rl">${esc(p.rolle||'')}</div></div><span class="mk ${mk}">${MARKS[mk]}</span></div>`}).join('')}</div>`;
+    body=`<div class="play"><div class="evlist"><h4>Akte · ${K.unlocked.length} Beweise</h4>${list}</div><div class="viewer">${viewer}</div><div class="side">${task}${sus}</div></div>`;
+    if(K.flash){const f=K.flash;body+=f.ok?`<div class="overlay"><div class="ovbox"><div class="big">✅</div><h2>Richtig, ${esc(f.by)}!</h2><p>${esc(f.t)}</p><p style="color:var(--amber)">${esc(f.next)}</p></div></div>`
+      :`<div class="overlay"><div class="ovbox"><div class="big">❌</div><h2>„${esc(f.v)}“ stimmt nicht</h2><p>Schaut euch die Beweise noch einmal genau an. (−10 Punkte)</p></div></div>`}}
+  else if(K.phase==='end'){const r=K.result,an=C.anklage,t=C.personen.find(p=>p.id===C.loesung.taeter)||{},pk=C.personen.find(p=>p.id===r.pick.taeter)||{};
+    const row=(l,ok,txt)=>`<div class="rrow"><span>${l}</span><b class="${ok?'ok':'no'}">${ok?'✔':'✘'} ${esc(txt)}</b></div>`;
+    body=`<div class="result"><div><h2>${r.taeter?'Fall gelöst!':'Der Täter entkommt …'}</h2>
+      ${row('Täter',r.taeter,pk.name||'—')}${r.taeter?'':`<div class="rrow"><span>Es war</span><b>${esc(t.name)}</b></div>`}
+      ${row('Motiv',r.motiv,an.motive[r.pick.motiv]||'—')}${row('Methode',r.methode,an.methoden[r.pick.methode]||'—')}${row('Beweis',r.beweis,(evById(r.pick.beweis)||{}).titel||'—')}
+      <div class="rrow"><span>Zeit · Tipps · Fehlversuche</span><b>${fmtT(K.elapsed)} · ${Object.values(K.hints).reduce((a,b)=>a+b,0)} · ${Object.values(K.wrong).reduce((a,b)=>a+b,0)}</b></div>
+      <div style="margin-top:28px;display:flex;align-items:baseline;gap:20px"><div class="score">${K.score}</div><div style="font-size:30px;color:var(--mute)">von 100 Punkten</div></div></div>
+      <div style="overflow:hidden"><h2 style="font-size:44px">Die Auflösung ${PLAYING==='sol'?'🔊':''}</h2><div class="sol">${esc(C.loesung.ablauf)}</div></div></div>`}
+  tv.innerHTML=hdr+body+(K.toast?`<div class="toast">${esc(K.toast.t)}</div>`:'');
+  const v=$('#vscroll');if(v&&renderTV.sh===K.shown)v.scrollTop=renderTV.st||0;renderTV.sh=K.shown}
+setInterval(()=>{const c=$('#clock');if(c)c.textContent=fmtT(elapsed());const v=$('#vscroll');if(v)renderTV.st=v.scrollTop},500);
+function fitTV(){const s=Math.min(innerWidth/1920,innerHeight/1080);const t=$('#tv');t.style.transform=`scale(${s})`;t.style.left=((innerWidth-1920*s)/2)+'px';t.style.top=((innerHeight-1080*s)/2)+'px'}
+
+/* =====================================================================
+   NETZWERK (PeerJS) – Fernseher ist der Server, Handys schicken Eingaben
+   ===================================================================== */
+const NET={peer:null,conn:null,conns:{},cids:{},everOpen:false,dialAt:0,cid:''};
+const peerId=code=>'couchkrimi-'+code.toLowerCase();
+function tell(i,o){const c=NET.conns[i];if(c&&c.open){try{c.send(o)}catch(e){}}}
+function pubState(pid){
+  const plan=C&&C.plan;const s={V:APPV,phase:K.phase,wish:K.wish,min:K.min,level:K.level,ch:K.ch,hostId,me:pid,keyOk:!!GEM.key,keyMsg:K.keyMsg||null,
+    players:P.filter(p=>p.joined).map(p=>({id:p.id,name:p.name,color:p.color})),gen:{busy:GEN.busy,err:GEN.err,steps:GEN.steps.slice(-6)},
+    playing:PLAYING,shown:K.shown,waiting:K.waiting,elapsed:elapsed(),run:!!K.runAt,flash:K.flash?{ok:K.flash.ok,by:K.flash.by,t:K.flash.t,next:K.flash.next,v:K.flash.v}:null};
+  if(plan){s.case={titel:C.titel,ort:C.ort,datum:C.datum,einleitung:C.einleitung,ermittler:C.ermittler.name,opfer:C.opfer,nk:C.kapitel.length,
+      personen:C.personen.map(p=>({id:p.id,name:p.name,alter:p.alter,rolle:p.rolle,beschreibung:p.beschreibung,verdaechtig:p.verdaechtig}))};
+    s.evs=C.kapitel.flatMap((c,k)=>c.beweise.filter(b=>K.unlocked.includes(b.id)).map(b=>({id:b.id,typ:b.typ,titel:b.titel,ch:k,heard:K.heard.includes(b.id)})));
+    s.chTitles=C.kapitel.map(c=>c.titel);s.marks=K.marks;
+    const a=curTask();if(a&&K.phase==='play')s.task={frage:a.frage,typ:a.typ,optionen:a.typ==='auswahl'?a.optionen:null,hints:a.hinweise.slice(0,K.hints[K.ch]||0),more:(K.hints[K.ch]||0)<a.hinweise.length};
+    if(K.phase==='accuse'||K.phase==='end')s.anklage={motive:C.anklage.motive,methoden:C.anklage.methoden};
+    if(K.phase==='end')s.result={...K.result,score:K.score,elapsed:K.elapsed,ablauf:C.loesung.ablauf,taeter:C.loesung.taeter}}
+  return s}
+function pushAll(){if(MODE!=='tv')return;clearTimeout(pushAll.t);pushAll.t=setTimeout(()=>{for(const i in NET.conns)tell(+i,{t:'state',s:pubState(+i)})},60)}
+function hostNet(){
+  const ABC='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  if(!ROOM){try{const r=JSON.parse(localStorage.getItem('ck_room')||'null');if(r&&now()-r.at<6*3600e3)ROOM=r.code}catch(e){}}
+  if(!ROOM)ROOM=Array.from({length:4},()=>ABC[Math.floor(Math.random()*ABC.length)]).join('');
+  try{localStorage.setItem('ck_room',JSON.stringify({code:ROOM,at:now()}))}catch(e){}
+  const peer=NET.peer=new Peer(peerId(ROOM));
+  peer.on('open',()=>{NET.everOpen=true;renderTV()});
+  peer.on('connection',conn=>{
+    conn.on('data',d=>{if(!d||typeof d!=='object')return;
+      if(d.t==='hello'&&typeof d.cid==='string'){let pid=NET.cids[d.cid];
+        if(pid==null){pid=P.length;if(pid>=6){try{conn.send({t:'full'})}catch(e){}return}P.push({id:pid,name:'',joined:false,color:COLORS[pid]});NET.cids[d.cid]=pid}
+        const old=NET.conns[pid];NET.conns[pid]=conn;conn.pid=pid;if(old&&old!==conn){try{old.close()}catch(e){}}
+        tell(pid,{t:'welcome',pid,room:ROOM});tell(pid,{t:'state',s:pubState(pid)});savePlayers()}
+      else if(d.t==='msg'&&conn.pid!=null&&NET.conns[conn.pid]===conn&&d.m&&typeof d.m.type==='string'){handle(conn.pid,d.m);if(d.m.type==='join')savePlayers()}});
+    conn.on('close',()=>{if(NET.conns[conn.pid]===conn)delete NET.conns[conn.pid]});conn.on('error',()=>{})});
+  peer.on('error',e=>{if(e.type==='unavailable-id'&&!NET.everOpen){ROOM='';try{localStorage.removeItem('ck_room')}catch(x){}setTimeout(()=>{try{peer.destroy()}catch(x){}hostNet()},500)}})}
+// Spielerplätze überstehen ein Neuladen des Fernsehers (Handys melden sich mit derselben Kennung wieder)
+function savePlayers(){try{localStorage.setItem('ck_players',JSON.stringify({P,cids:NET.cids,hostId,at:now()}))}catch(e){}}
+function loadPlayers(){try{const s=JSON.parse(localStorage.getItem('ck_players')||'null');if(s&&now()-s.at<6*3600e3){P.push(...s.P);Object.assign(NET.cids,s.cids);hostId=s.hostId}}catch(e){}}
+
+/* =====================================================================
+   HANDY
+   ===================================================================== */
+let ME=null,ST=null,TAB='akte',OPEN=null;const EVC={},IMGC={},IMGPART={};
+const ph={name:'',wish:null,key:'',sel:null,code:'',acc:{taeter:'',motiv:'',methode:'',beweis:''},confirm:'',seen:new Set(),pend:''};
+try{ph.name=localStorage.getItem('ck_name')||''}catch(e){}
+function send(m){if(NET.conn&&NET.conn.open){try{NET.conn.send({t:'msg',m})}catch(e){}}}
+function netMsg(h){const n=$('#net');n.innerHTML=h;n.classList.remove('hide')}
+function phoneNet(){
+  if(!ROOM){netMsg(`<div style="font-size:50px">🕵️</div><b style="font-size:22px">Couch-Krimi</b><div>Raumcode vom Fernseher:</div><input class="in" id="roomIn" maxlength="4" autocomplete="off" autocapitalize="characters" placeholder="CODE"><button class="btn" id="roomGo" style="max-width:220px">Beitreten</button>`);
+    const go=()=>{const v=$('#roomIn').value.toUpperCase().replace(/[^A-Z0-9]/g,'');if(v.length===4)location.href=BASE+'?r='+v};
+    $('#roomGo').onclick=go;$('#roomIn').onkeydown=e=>{if(e.key==='Enter')go()};return}
+  // Kennung pro Browser-Tab: übersteht Neuladen, zwei Tabs sind zwei Ermittler
+  try{NET.cid=sessionStorage.getItem('ck_cid')||'';if(!NET.cid){NET.cid=Math.random().toString(36).slice(2)+now().toString(36);sessionStorage.setItem('ck_cid',NET.cid)}}catch(e){NET.cid=Math.random().toString(36).slice(2)}
+  netMsg(`<div style="font-size:50px">🕵️</div><div>Verbinde mit Raum</div><b style="font-size:26px">${ROOM}</b>`);
+  const mk=()=>{const peer=NET.peer=new Peer();peer.on('open',dial);peer.on('error',e=>{if(e.type==='peer-unavailable'&&ME==null)netMsg(`<div style="font-size:50px">🔍</div><div>Raum <b>${ROOM}</b> nicht gefunden.<br>Läuft der Krimi am Fernseher?<br>Ich versuche es weiter …</div>`)})};
+  mk();
+  setInterval(()=>{const p=NET.peer;if(!p||p.destroyed)mk();else if(p.disconnected){try{p.reconnect()}catch(e){}}else if((!NET.conn||!NET.conn.open)&&now()-NET.dialAt>4000)dial()},1500);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&(!NET.conn||!NET.conn.open))dial()})}
+function dial(){const peer=NET.peer;if(!peer||!peer.open)return;NET.dialAt=now();if(NET.conn){try{NET.conn.close()}catch(e){}}
+  const conn=NET.conn=peer.connect(peerId(ROOM),{reliable:true,serialization:'json'});
+  conn.on('open',()=>{try{conn.send({t:'hello',cid:NET.cid})}catch(e){}});
+  conn.on('data',d=>{if(!d||NET.conn!==conn)return;
+    if(d.t==='welcome'){ME=d.pid;$('#net').classList.add('hide');if(ph.name&&ST===null)setTimeout(()=>{if(ST&&!ST.players.some(p=>p.id===ME))send({type:'join',name:ph.name})},300)}
+    else if(d.t==='full')netMsg('<div style="font-size:50px">🚪</div><div>Der Raum ist voll (höchstens 6).</div>');
+    else if(d.t==='state'){const first=!ST;ST=d.s;if(ST.evs)ST.evs.forEach(e=>{if(EVC[e.id]&&e.typ==='audio'&&e.heard&&!EVC[e.id].zeilen)delete EVC[e.id]});
+      if(first&&ph.name&&!ST.players.some(p=>p.id===ME))send({type:'join',name:ph.name});renderPhone()}
+    else if(d.t==='ev'){EVC[d.ev.id]=d.ev;renderPhone()}
+    else if(d.t==='img'){const b=IMGPART[d.id]||(IMGPART[d.id]=[]);b[d.i]=d.d;if(b.filter(Boolean).length===d.n){IMGC[d.id]=b.join('');delete IMGPART[d.id];renderPhone()}}});
+  conn.on('close',()=>{if(NET.conn===conn){NET.conn=null;netMsg('<div style="font-size:50px">📡</div><div>Verbindung verloren –<br>verbinde neu …</div>')}})}
+
+function renderPhone(){
+  const root=$('#ph');if(!ST||ME==null)return;
+  const sy=scrollY,joined=ST.players.some(p=>p.id===ME),isHost=ST.hostId===ME,s=ST;
+  // Eingaben nicht überschreiben, während jemand tippt
+  const ae=document.activeElement;if(ae&&root.contains(ae)&&(ae.tagName==='TEXTAREA'||ae.tagName==='INPUT'))return;
+  let h='';
+  if(!joined){h=`<div class="pbody"><div class="center"><div class="big">🕵️</div><h2 style="color:var(--txt);margin:8px 0">Couch-Krimi</h2>Wie heißt du, Ermittler?</div>
+    <input class="in" id="nm" maxlength="16" placeholder="Dein Name" value="${esc(ph.name)}"><button class="btn" data-a="join">Beitreten</button></div>`;
+    root.innerHTML=h;return}
+  const top=`<div class="ptop"><span class="t">${s.case?'🗂️ '+esc(s.case.titel):'🕵️ Couch-Krimi'}</span>${['play','accuse'].includes(s.phase)?`<span class="tm" id="ptm">${fmtT(s.elapsed)}</span>`:''}</div>`;
+  if(['lobby','gen','ready'].includes(s.phase)){
+    if(!isHost){h=`<div class="pbody"><div class="center"><div class="big">${s.phase==='lobby'?'⏳':'📝'}</div>${s.phase==='lobby'?'Warte, bis der Gastgeber einen Fall erstellt …':s.phase==='gen'?'Die KI schreibt gerade euren Fall …':'Der Fall ist bereit – gleich geht es los!'}</div>${genList(s)}</div>`}
+    else if(s.phase==='lobby'){const wish=ph.wish!=null?ph.wish:s.wish;
+      h=`<div class="pbody"><h2 style="margin:4px 0 2px">Neuer Fall 👑</h2><div class="note" style="margin-top:0">Beschreibe den Fall in ein paar Worten.</div>
+        <label class="l">Fall-Idee</label><textarea class="in" id="wish" rows="3" maxlength="200" placeholder="z. B. Mord auf Gran Canaria">${esc(wish)}</textarea>
+        <div class="chips">${['Mord auf Gran Canaria','Skandal in Stuttgart','Giftmord auf dem Weingut','Einbruch im Museum','Tod bei der Hochzeit','Erpressung im Fußballverein'].map(c=>`<button class="chip" data-a="chip" data-v="${esc(c)}">${esc(c)}</button>`).join('')}</div>
+        <label class="l">Spieldauer</label><div class="chips">${[45,60,90].map(m=>`<button class="chip ${s.min===m?'on':''}" data-a="min" data-v="${m}">ca. ${m} Min.</button>`).join('')}</div>
+        <label class="l">Schwierigkeit</label><div class="chips">${['leicht','normal','schwer'].map(l=>`<button class="chip ${s.level===l?'on':''}" data-a="lvl" data-v="${l}">${l[0].toUpperCase()+l.slice(1)}</button>`).join('')}</div>
+        <button class="btn" data-a="create" ${s.keyOk?'':'disabled'}>🔎 Fall erstellen</button>
+        ${s.keyOk?'<div class="note">Die KI braucht für Kapitel 1 ein paar Minuten, den Rest schreibt sie, während ihr ermittelt.</div>':'<div class="note bad">Zuerst unten einen Gemini-Key eintragen.</div>'}
+        <label class="l">Gemini-API-Key</label><input class="in" id="key" type="password" autocomplete="off" placeholder="${s.keyOk?'gespeichert – neuen eintragen zum Ändern':'AIza…'}">
+        <button class="btn sec small" data-a="key">Key speichern</button>${s.keyMsg?`<div class="note ${s.keyMsg.ok?'ok':s.keyMsg.ok===false?'bad':''}">${esc(s.keyMsg.t)}</div>`:''}
+        <div class="note">Kostenlos bei aistudio.google.com. Der Key wird nur auf dem Fernseher gespeichert.</div></div>`}
+    else{h=`<div class="pbody"><h2 style="margin:4px 0 8px">${s.case?esc(s.case.titel):'Fall wird erstellt'}</h2>${genList(s)}
+      ${s.phase==='ready'?`<button class="btn" data-a="begin">🚨 Ermittlung starten</button>`:''}
+      ${s.gen.err&&!s.gen.busy?`<div class="note bad">${esc(s.gen.err)}</div><button class="btn" data-a="retry">Erneut versuchen</button>`:''}
+      <button class="btn sec small" data-a="discard" style="margin-top:24px">${ph.confirm==='discard'?'Wirklich verwerfen?':'Fall verwerfen'}</button></div>`}
+    root.innerHTML=top+h;return}
+  if(s.phase==='briefing'){h=`<div class="pbody"><div class="center"><div class="big">🚨</div><h2 style="color:var(--txt)">Einsatzbefehl</h2></div><div class="doc" style="font-size:15px">${esc(s.case.einleitung)}</div>
+    ${isHost?`<button class="btn" data-a="toFile">Zur Fallakte</button>`:'<div class="note">Hört zu – gleich geht es los.</div>'}</div>`;root.innerHTML=top+h;return}
+  if(s.phase==='end'){const r=s.result,pk=s.case.personen.find(p=>p.id===r.pick.taeter)||{},tt=s.case.personen.find(p=>p.id===r.taeter)||{};
+    h=`<div class="pbody"><div class="center"><div class="big">${r.taeter?'🏆':'🕳️'}</div><h2 style="color:var(--txt);margin:6px 0">${r.taeter?'Fall gelöst!':'Der Täter entkommt …'}</h2><div style="font-size:40px;color:var(--amber);font-weight:800">${r.score} / 100</div></div>
+      <div class="note">${r.taeter?`Ihr habt ${esc(pk.name)} überführt.`:`Ihr habt auf ${esc(pk.name)} getippt – es war ${esc(tt.name)}.`} Zeit: ${fmtT(r.elapsed)}</div>
+      <div class="doc" style="font-size:15px;margin-top:14px">${esc(r.ablauf)}</div>
+      <button class="btn sec" data-a="playSol">🔊 Auflösung am TV abspielen</button>${isHost?`<button class="btn" data-a="newGame">Neuer Fall</button>`:''}</div>`;root.innerHTML=top+h;return}
+  // Ermittlung: Akte / Personen / Auftrag
+  const newEv=s.evs.filter(e=>!ph.seen.has(e.id)).length;
+  if(OPEN&&!s.evs.some(e=>e.id===OPEN))OPEN=null;
+  if(TAB==='akte'&&OPEN){const meta=s.evs.find(e=>e.id===OPEN),b=EVC[OPEN];ph.seen.add(OPEN);
+    if(!b)send({type:'getEv',id:OPEN});else if(b.typ==='foto'&&!IMGC[OPEN]&&b.media==='ok'&&!ph['req'+OPEN]){ph['req'+OPEN]=1;send({type:'getEv',id:OPEN})}
+    const onTV=s.shown===OPEN;
+    h=`<div class="pbody reader"><div class="rbar"><button class="btn sec" data-a="close">‹ Akte</button>
+      ${meta.typ==='audio'?(s.playing===OPEN?`<button class="btn" data-a="stop">⏹ Stopp</button>`:`<button class="btn" data-a="play" data-v="${OPEN}">▶︎ Am TV abspielen</button>`)
+        :onTV?`<button class="btn sec" data-a="up">▲</button><button class="btn sec" data-a="down">▼</button>`:`<button class="btn" data-a="show" data-v="${OPEN}">📺 Am TV zeigen</button>`}</div>
+      ${b?docHTML(b,{img:IMGC[OPEN]||'',playing:s.playing===OPEN,heard:!!b.zeilen}):'<div class="center">Lade …</div>'}</div>`}
+  else if(TAB==='akte'){h=`<div class="pbody">${s.waiting?'<div class="note">🔬 Neue Beweise werden noch ausgewertet …</div>':''}${s.chTitles.map((t,k)=>{const l=s.evs.filter(e=>e.ch===k);if(!l.length)return '';
+      return `<label class="l">Kapitel ${k+1} · ${esc(t)}</label><div class="plist">${l.map(e=>`<button class="pitem ${ph.seen.has(e.id)?'':'new'} ${s.shown===e.id?'cur':''}" data-a="open" data-v="${e.id}"><span class="ic">${ICON[e.typ]}</span><span class="tt"><b>${esc(e.titel)}</b><small>${TYPNAME[e.typ]}${s.shown===e.id?' · 📺 am TV':''}${e.typ==='audio'&&!e.heard?' · noch nicht gehört':''}</small></span>›</button>`).join('')}</div>`}).join('')}
+      <label class="l">Fall</label><div class="doc" style="font-size:14px">${esc(s.case.einleitung)}<p style="margin-top:.8em"><b>Opfer:</b> ${esc(s.case.opfer&&s.case.opfer.name)} – ${esc(s.case.opfer&&s.case.opfer.beschreibung)}</p></div></div>`}
+  else if(TAB==='pers'){h=`<div class="pbody"><div class="note" style="margin-top:0">Markiert gemeinsam, wen ihr verdächtigt – das sehen alle am Fernseher.</div>${s.case.personen.map(p=>{const mk=s.marks[p.id];
+      return `<div class="susp"><div class="h"><span class="dot" style="background:${p.verdaechtig?'#596178':'#2f4a3d'}">${esc(p.name[0])}</span><div><b>${esc(p.name)}</b><small>${esc([p.rolle,p.alter?p.alter+' J.':''].filter(Boolean).join(' · '))}${p.verdaechtig?'':' · Zeuge'}</small></div></div><p>${esc(p.beschreibung||'')}</p>
+        ${mk?`<div class="seg">${Object.entries(MARKS).map(([k,l])=>`<button class="${k} ${mk===k?'on':''}" data-a="mark" data-id="${p.id}" data-v="${k}">${l}</button>`).join('')}</div>`:''}</div>`}).join('')}</div>`}
+  else{ // Auftrag
+    if(s.phase==='accuse'){const a=ph.acc,an=s.anklage,ok=a.taeter&&a.motiv!==''&&a.methode!==''&&a.beweis;
+      h=`<div class="pbody"><div class="tbox"><div class="lbl">Anklage</div><div class="q">Wer ist der Täter, warum und wie – und welcher Beweis überführt ihn?</div></div>
+        <label class="l">Täter</label>${s.case.personen.filter(p=>p.verdaechtig).map(p=>`<button class="opt ${a.taeter===p.id?'on':''}" data-a="acc" data-k="taeter" data-v="${p.id}">${esc(p.name)}</button>`).join('')}
+        <label class="l">Motiv</label>${an.motive.map((m,i)=>`<button class="opt ${a.motiv===String(i)?'on':''}" data-a="acc" data-k="motiv" data-v="${i}">${esc(m)}</button>`).join('')}
+        <label class="l">Methode</label>${an.methoden.map((m,i)=>`<button class="opt ${a.methode===String(i)?'on':''}" data-a="acc" data-k="methode" data-v="${i}">${esc(m)}</button>`).join('')}
+        <label class="l">Entscheidender Beweis</label><select class="in" id="bew"><option value="">– Beweis wählen –</option>${s.evs.map(e=>`<option value="${e.id}" ${a.beweis===e.id?'selected':''}>${ICON[e.typ]} ${esc(e.titel)}</option>`).join('')}</select>
+        <button class="btn" data-a="accuse" ${ok?'':'disabled'}>${ph.confirm==='accuse'?'Sicher? Nochmal tippen!':'⚖️ Anklage erheben'}</button><div class="note">Das ist endgültig – sprecht euch vorher ab.</div></div>`}
+    else if(s.waiting||!s.task){h=`<div class="pbody"><div class="center"><div class="big">🔬</div>Die Spurensicherung wertet die neuen Beweise aus …</div>${genList(s)}</div>`}
+    else{const t=s.task;
+      h=`<div class="pbody"><div class="tbox"><div class="lbl">Auftrag · Kapitel ${s.ch+1}</div><div class="q">${esc(t.frage)}</div>${t.hints.map((x,i)=>`<div class="hintp">💡 Tipp ${i+1}: ${esc(x)}</div>`).join('')}</div>
+        ${t.typ==='person'?s.case.personen.map(p=>`<button class="opt ${ph.sel===p.id?'on':''}" data-a="sel" data-v="${p.id}">${esc(p.name)} <small style="color:var(--mute)">· ${esc(p.rolle||'')}</small></button>`).join('')
+         :t.typ==='auswahl'?t.optionen.map(o=>`<button class="opt ${ph.sel===o?'on':''}" data-a="sel" data-v="${esc(o)}">${esc(o)}</button>`).join('')
+         :`<label class="l">Antwort</label><input class="in" id="code" maxlength="30" autocomplete="off" placeholder="Code, Zahl oder Wort" value="${esc(ph.code)}">`}
+        <button class="btn" data-a="answer">${ph.confirm==='answer'?'Sicher? Nochmal tippen!':'Antwort abgeben'}</button>
+        <div class="note">Falsche Antworten kosten 10 Punkte, ein Tipp kostet 5.</div>
+        ${t.more?`<button class="btn sec small" data-a="hint">${ph.confirm==='hint'?'Wirklich einen Tipp nehmen?':'💡 Tipp anzeigen'}</button>`:''}</div>`}}
+  if(s.flash){const f=s.flash;h=`<div class="pbody"><div class="center"><div class="big">${f.ok?'✅':'❌'}</div><h2 style="color:var(--txt)">${f.ok?'Richtig!':'Leider falsch'}</h2>${f.ok?esc(f.t)+'<br><br><b style="color:var(--amber)">'+esc(f.next)+'</b>':`„${esc(f.v)}“ passt nicht. −10 Punkte`}</div></div>`}
+  const tabs=`<div class="tabs">${[['akte','🗂️','Akte',newEv],['pers','👥','Personen',0],['task','❓',s.phase==='accuse'?'Anklage':'Auftrag',0]].map(([k,i,l,n])=>`<button class="${TAB===k?'on':''}" data-a="tab" data-v="${k}"><span>${i}</span>${l}${n?`<i class="badge">${n}</i>`:''}</button>`).join('')}</div>`;
+  root.innerHTML=top+h+tabs;if(renderPhone.tab===TAB+OPEN)scrollTo(0,sy);else scrollTo(0,0);renderPhone.tab=TAB+OPEN}
+function genList(s){return `<div class="steps" style="font-size:15px;gap:8px;margin-top:10px">${(s.gen.steps||[]).map(x=>`<div class="${x.state}">${x.state==='now'?'<span class="spin" style="width:16px;height:16px"></span>':x.state==='ok'?'✅':'⚠️'} ${esc(x.label)}</div>`).join('')}</div>`}
+setInterval(()=>{const t=$('#ptm');if(t&&ST&&ST.run){ST.elapsed+=1000;t.textContent=fmtT(ST.elapsed)}},1000);
+document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b||MODE!=='phone')return;const a=b.dataset.a,v=b.dataset.v;
+  const twice=k=>{if(ph.confirm===k){ph.confirm='';return true}ph.confirm=k;setTimeout(()=>{if(ph.confirm===k){ph.confirm='';renderPhone()}},3500);renderPhone();return false};
+  switch(a){
+    case 'join':{const n=$('#nm').value.trim();if(!n)return;ph.name=n;try{localStorage.setItem('ck_name',n)}catch(x){}send({type:'join',name:n});break}
+    case 'chip':ph.wish=v;send({type:'wish',v});renderPhone();break;
+    case 'min':send({type:'opts',min:+v});break;
+    case 'lvl':send({type:'opts',level:v});break;
+    case 'key':{const k=$('#key').value.trim();if(k){send({type:'gemSet',key:k});$('#key').value=''}break}
+    case 'create':{const w=$('#wish').value.trim();if(!w)return;ph.wish=null;send({type:'wish',v:w});send({type:'create'});break}
+    case 'retry':send({type:'retry'});break;
+    case 'discard':if(twice('discard'))send({type:'discard'});break;
+    case 'begin':send({type:'begin'});break;
+    case 'toFile':send({type:'toFile'});break;
+    case 'tab':TAB=v;OPEN=null;ph.confirm='';renderPhone();break;
+    case 'open':OPEN=v;renderPhone();break;
+    case 'close':OPEN=null;renderPhone();break;
+    case 'show':send({type:'show',id:v});break;
+    case 'play':send({type:'play',id:v});break;
+    case 'stop':send({type:'stop'});break;
+    case 'up':send({type:'scroll',d:-1});break;case 'down':send({type:'scroll',d:1});break;
+    case 'mark':send({type:'mark',id:b.dataset.id,v});break;
+    case 'sel':ph.sel=v;renderPhone();break;
+    case 'hint':if(twice('hint'))send({type:'hint'});break;
+    case 'answer':{const c=$('#code');const val=ST.task&&ST.task.typ==='code'?(c?c.value.trim():''):ph.sel;if(c)ph.code=c.value;if(!val)return;
+      if(twice('answer')){send({type:'answer',v:val});ph.sel=null;ph.code=''}break}
+    case 'acc':ph.acc[b.dataset.k]=v;renderPhone();break;
+    case 'accuse':{const sel=$('#bew');if(sel)ph.acc.beweis=sel.value;if(twice('accuse'))send({type:'accuse',...ph.acc});break}
+    case 'playSol':send({type:'play',id:'sol'});break;
+    case 'newGame':send({type:'newGame'});break}});
+document.addEventListener('input',e=>{if(e.target.id==='wish')ph.wish=e.target.value;if(e.target.id==='code')ph.code=e.target.value});
+document.addEventListener('change',e=>{if(e.target.id==='bew'){ph.acc.beweis=e.target.value;renderPhone()}});
+document.addEventListener('focusout',e=>{if(MODE==='phone'&&e.target.id==='wish'&&ph.wish!=null&&ST&&ph.wish!==ST.wish)send({type:'wish',v:ph.wish});setTimeout(renderPhone,50)});
+
+/* =====================================================================
+   START
+   ===================================================================== */
+if(MODE==='tv'){
+  $('#tv').classList.remove('hide');fitTV();addEventListener('resize',fitTV);
+  try{K.wish=localStorage.getItem('ck_wish')||''}catch(e){}
+  loadPlayers();
+  // Fernbedienung: OK spielt die gezeigte Tonaufnahme bzw. stoppt sie
+  addEventListener('keydown',e=>{if(e.key==='Enter'||e.keyCode===23){if(PLAYING)stopAudio();else if(K.shown&&evById(K.shown)&&evById(K.shown).typ==='audio')playAudio(K.shown)}});
+  renderTV();
+  resume().then(()=>{renderTV();pushAll()});
+  if(typeof Peer!=='undefined')hostNet();
+  setInterval(()=>{const p=NET.peer;if(p&&!p.destroyed&&p.disconnected){try{p.reconnect()}catch(e){}}},5000);
+  if(GEM.key)listModels();
+  // Spielzeit regelmäßig sichern
+  setInterval(()=>{if(K.runAt){K.elapsed=elapsed();K.runAt=now();saveProg()}},15000)}
+else{$('#ph').classList.remove('hide');phoneNet()}
+</script>
+</body>
+</html>
