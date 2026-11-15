@@ -483,7 +483,7 @@ body.mode-phone .pscreen{border-radius:0;padding-top:env(safe-area-inset-top);pa
    Ohne Parameter: Fernseher (zeigt QR-Code, führt das Spiel) · ?r=CODE oder #CODE: Handy-Controller
    ?demo: Prototyp-Ansicht mit Fernseher und vier simulierten Handys auf einer Seite
    ===================================================================== */
-const APPV='2026-11-15h'; // bei Änderungen am Protokoll zwischen Fernseher und Handy hochzählen
+const APPV='2026-11-15i'; // bei Änderungen am Protokoll zwischen Fernseher und Handy hochzählen
 const QS=new URLSearchParams(location.search);
 let ROOM=(QS.get('r')||(/^#[A-Za-z0-9]{4}$/.test(location.hash)?location.hash.slice(1):'')).toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,4);
 const MODE=typeof Peer==='undefined'||QS.has('demo')?'demo':(QS.has('r')||ROOM?'phone':'tv');
@@ -691,7 +691,7 @@ function next(type,pool){const ai=AI.pool[type];if(aiOn&&ai&&ai.length)return ai
    KI-FRAGEN (Claude über die Artifact-Schnittstelle "sample")
    ===================================================================== */
 let SAMPLE=null,DICT=null,DICT_DENIED=false,aiOn=true;
-const AI={state:{},pool:{},denied:false,err:'',ms:{}};
+const AI={state:{},pool:{},denied:false,err:'',ms:0,got:0};
 const THEMES=['Geografie','Tiere','Essen & Trinken','Sport','Musik','Filme & Serien','Geschichte','Wissenschaft','Technik','Natur','Sprache & Wörter','Popkultur','Weltraum','Alltag','Deutschland','Erfindungen','Körper & Gesundheit','Kunst'];
 const SVG_ATTR={path:['d'],circle:['cx','cy','r'],ellipse:['cx','cy','rx','ry'],line:['x1','y1','x2','y2'],rect:['x','y','width','height','rx','ry'],polyline:['points']};
 function cleanStroke(str){const m=String(str).match(/^\s*<(\w+)\b([^<>]*?)\/?>\s*(<\/\w+>)?\s*$/);if(!m)return null;
@@ -701,11 +701,11 @@ function cleanStroke(str){const m=String(str).match(/^\s*<(\w+)\b([^<>]*?)\/?>\s
   if(!(tag==='rect'?['x','y','width','height']:allow).every(k=>k in out))return null;
   return `<${tag} ${Object.entries(out).map(([k,v])=>`${k}="${v}"`).join(' ')}/>`}
 const AI_SPECS={
-  quiz:{prompt:t=>`Erstelle 15 Quizfragen auf Deutsch für ein lustiges Party-Quiz am Fernseher. Themen-Mix: ${t}. Mittlere Schwierigkeit, nur eindeutig gesicherte Fakten, keine Fragen zu Dingen, die sich oft ändern. Jede Frage hat genau 4 Antwortoptionen mit höchstens 3 Wörtern, die man gut laut aussprechen kann; genau eine ist richtig. Antworte ausschließlich mit einem JSON-Array: [{"q":"Frage?","a":["Option1","Option2","Option3","Option4"],"c":0}] – "c" ist der Index der richtigen Option.`,
+  quiz:{prompt:t=>`Erstelle 12 Quizfragen auf Deutsch für ein lustiges Party-Quiz am Fernseher. Themen-Mix: ${t}. Mittlere Schwierigkeit, nur eindeutig gesicherte Fakten, keine Fragen zu Dingen, die sich oft ändern. Jede Frage hat genau 4 Antwortoptionen mit höchstens 3 Wörtern, die man gut laut aussprechen kann; genau eine ist richtig. Antworte ausschließlich mit einem JSON-Array: [{"q":"Frage?","a":["Option1","Option2","Option3","Option4"],"c":0}] – "c" ist der Index der richtigen Option.`,
     check:x=>typeof x.q==='string'&&Array.isArray(x.a)&&x.a.length===4&&x.a.every(s=>typeof s==='string'&&s.length<=40)&&new Set(x.a).size===4&&Number.isInteger(x.c)&&x.c>=0&&x.c<4,
     fix:x=>{const right=x.a[x.c],a=shuffle(x.a);return{q:x.q.slice(0,140),a,c:a.indexOf(right),ai:true}}},
-  map:{prompt:t=>S.aiWish?`Erstelle ein Karten-Ratespiel („Wo liegt …?“) passend zum Wunsch der Spieler (siehe unten). Wähle zuerst EINE passende Region, die als Karte gezeigt wird (z. B. eine Insel, eine Stadt, ein Land, ein Kontinent oder die ganze Welt), und dann 20 bekannte, gut unterscheidbare Orte darin (Städte, Dörfer, Berge, Strände, Seen, Sehenswürdigkeiten …), gut über die Region verteilt. Die Grenzen der Region (n = nördlichster und s = südlichster Breitengrad, w = westlichster und e = östlichster Längengrad, in Dezimalgrad) sollen alle Orte knapp umschließen. Gib präzise Koordinaten an. Formuliere die Namen so, dass sie in den Satz „Wo liegt …?“ passen (z. B. "Maspalomas", "der Roque Nublo"). Antworte ausschließlich mit JSON in genau dieser Form: {"region":{"name":"…","n":28.2,"s":27.7,"w":-15.9,"e":-15.3},"places":[{"name":"…","lat":27.76,"lon":-15.58}]}`
-    :`Nenne 20 bekannte Orte in Deutschland für ein Karten-Ratespiel: gemischt Großstädte, kleinere bekannte Städte, Berge, Inseln, Seen und Sehenswürdigkeiten, gut über ganz Deutschland verteilt. Gib präzise Koordinaten an. Formuliere den Namen so, dass er in den Satz „Wo liegt …?“ passt (z. B. "Heidelberg", "die Insel Rügen", "der Bodensee"). Antworte ausschließlich mit einem JSON-Array: [{"name":"…","lat":52.52,"lon":13.40}]`,
+  map:{prompt:t=>S.aiWish?`Erstelle ein Karten-Ratespiel („Wo liegt …?“) passend zum Wunsch der Spieler (siehe unten). Wähle zuerst EINE passende Region, die als Karte gezeigt wird (z. B. eine Insel, eine Stadt, ein Land, ein Kontinent oder die ganze Welt), und dann 15 bekannte, gut unterscheidbare Orte darin (Städte, Dörfer, Berge, Strände, Seen, Sehenswürdigkeiten …), gut über die Region verteilt. Die Grenzen der Region (n = nördlichster und s = südlichster Breitengrad, w = westlichster und e = östlichster Längengrad, in Dezimalgrad) sollen alle Orte knapp umschließen. Gib präzise Koordinaten an. Formuliere die Namen so, dass sie in den Satz „Wo liegt …?“ passen (z. B. "Maspalomas", "der Roque Nublo"). Antworte ausschließlich mit JSON in genau dieser Form: {"region":{"name":"…","n":28.2,"s":27.7,"w":-15.9,"e":-15.3},"places":[{"name":"…","lat":27.76,"lon":-15.58}]}`
+    :`Nenne 15 bekannte Orte in Deutschland für ein Karten-Ratespiel: gemischt Großstädte, kleinere bekannte Städte, Berge, Inseln, Seen und Sehenswürdigkeiten, gut über ganz Deutschland verteilt. Gib präzise Koordinaten an. Formuliere den Namen so, dass er in den Satz „Wo liegt …?“ passt (z. B. "Heidelberg", "die Insel Rügen", "der Bodensee"). Antworte ausschließlich mit einem JSON-Array: [{"name":"…","lat":52.52,"lon":13.40}]`,
     // Mit Region (Wunsch): eigener Kartenausschnitt; ohne: Deutschland-Umriss
     parse:res=>{const g=res&&!Array.isArray(res)&&res.region,list=Array.isArray(res)?res:((res&&(res.places||res.items))||[]);
       const num=v=>typeof v==='number'&&isFinite(v),pts=list.filter(x=>x&&num(x.lat)&&num(x.lon));
@@ -716,13 +716,13 @@ const AI_SPECS={
       const view=mapView(b),region=String(g.name||'').slice(0,40);return ins.map(x=>({...x,view,region}))},
     check:x=>typeof x.name==='string'&&(x.view?true:x.lat>47.2&&x.lat<55.1&&x.lon>5.8&&x.lon<15.1),
     fix:x=>{const a=[x.name.slice(0,34),x.lat,x.lon];a.ai=true;a.view=x.view||null;a.region=x.region||'';return a}},
-  draw:{prompt:t=>`Erstelle 10 Bilder für ein Montagsmaler-Ratespiel („Was wird gemalt?“) auf Deutsch. Themen-Mix: ${t}. Wähle Begriffe (Tiere, Gegenstände, Gebäude, Essen, Fahrzeuge, Pflanzen, Wahrzeichen …), die man als einfache Strichzeichnung gut erkennt und mit 1–3 Wörtern benennen kann. Jede Zeichnung besteht aus 6 bis 14 SVG-Elementen in einer viewBox "0 0 200 160" (Motiv mittig und groß), in sinnvoller Zeichenreihenfolge: zuerst grobe Umrisse, die verräterischen Details zuletzt. Erlaubt sind nur <path d="…"/>, <circle cx cy r/>, <ellipse cx cy rx ry/>, <line x1 y1 x2 y2/>, <rect x y width height/> und <polyline points="…"/> – ohne fill-, stroke-, style-, transform- oder class-Attribute und ohne Text. "syn" enthält 2–6 akzeptierte Antworten in Kleinbuchstaben (Synonyme, Mehrzahl, Umgangssprache). Antworte ausschließlich mit einem JSON-Array: [{"n":"Leuchtturm","syn":["leuchtturm","leuchtfeuer"],"s":["<rect x=\\"88\\" y=\\"40\\" width=\\"24\\" height=\\"95\\"/>","…"]}]`,
+  draw:{prompt:t=>`Erstelle 8 Bilder für ein Montagsmaler-Ratespiel („Was wird gemalt?“) auf Deutsch. Themen-Mix: ${t}. Wähle Begriffe (Tiere, Gegenstände, Gebäude, Essen, Fahrzeuge, Pflanzen, Wahrzeichen …), die man als einfache Strichzeichnung gut erkennt und mit 1–3 Wörtern benennen kann. Jede Zeichnung besteht aus 6 bis 14 SVG-Elementen in einer viewBox "0 0 200 160" (Motiv mittig und groß), in sinnvoller Zeichenreihenfolge: zuerst grobe Umrisse, die verräterischen Details zuletzt. Erlaubt sind nur <path d="…"/>, <circle cx cy r/>, <ellipse cx cy rx ry/>, <line x1 y1 x2 y2/>, <rect x y width height/> und <polyline points="…"/> – ohne fill-, stroke-, style-, transform- oder class-Attribute und ohne Text. "syn" enthält 2–6 akzeptierte Antworten in Kleinbuchstaben (Synonyme, Mehrzahl, Umgangssprache). Antworte ausschließlich mit einem JSON-Array: [{"n":"Leuchtturm","syn":["leuchtturm","leuchtfeuer"],"s":["<rect x=\\"88\\" y=\\"40\\" width=\\"24\\" height=\\"95\\"/>","…"]}]`,
     check:x=>typeof x.n==='string'&&x.n.trim().length>1&&x.n.length<=30&&Array.isArray(x.s)&&x.s.length<=24&&x.s.map(cleanStroke).filter(Boolean).length>=4,
     fix:x=>({n:x.n.trim(),syn:[...new Set([x.n,...(Array.isArray(x.syn)?x.syn:[])].map(v=>String(v).slice(0,40)))].slice(0,8),s:x.s.map(cleanStroke).filter(Boolean).slice(0,18),ai:true})},
-  estimate:{prompt:t=>`Erstelle 15 Schätzfragen auf Deutsch für ein Partyspiel. Themen-Mix: ${t}. Jede Antwort ist eine einzelne, eindeutig belegte Zahl (keine Spannen, keine Werte, die sich ständig ändern). Antworte ausschließlich mit einem JSON-Array: [{"q":"Wie hoch ist …?","u":"Einheit oder leer","v":123}]`,
+  estimate:{prompt:t=>`Erstelle 10 Schätzfragen auf Deutsch für ein Partyspiel. Themen-Mix: ${t}. Jede Antwort ist eine einzelne, eindeutig belegte Zahl (keine Spannen, keine Werte, die sich ständig ändern). Antworte ausschließlich mit einem JSON-Array: [{"q":"Wie hoch ist …?","u":"Einheit oder leer","v":123}]`,
     check:x=>typeof x.q==='string'&&typeof x.v==='number'&&isFinite(x.v),
     fix:x=>({q:x.q.slice(0,140),u:String(x.u||'').slice(0,12),v:x.v,ai:true})},
-  sort:{prompt:t=>`Erstelle 12 Sortier-Aufgaben auf Deutsch für ein Partyspiel. Themen-Mix: ${t}. Jede Aufgabe hat ein Kriterium wie "Tiere: leicht → schwer" und genau 4 Begriffe (höchstens 3 Wörter), die eindeutig und mit deutlichem Abstand in diese Reihenfolge gehören. Gib die Begriffe in der RICHTIGEN Reihenfolge an, jeweils mit einem kurzen Wert zur Auflösung (z. B. Jahr oder Größe) oder "". Antworte ausschließlich mit einem JSON-Array: [{"q":"Kriterium: A → B","items":[["Begriff","Wert"],["…","…"],["…","…"],["…","…"]]}]`,
+  sort:{prompt:t=>`Erstelle 8 Sortier-Aufgaben auf Deutsch für ein Partyspiel. Themen-Mix: ${t}. Jede Aufgabe hat ein Kriterium wie "Tiere: leicht → schwer" und genau 4 Begriffe (höchstens 3 Wörter), die eindeutig und mit deutlichem Abstand in diese Reihenfolge gehören. Gib die Begriffe in der RICHTIGEN Reihenfolge an, jeweils mit einem kurzen Wert zur Auflösung (z. B. Jahr oder Größe) oder "". Antworte ausschließlich mit einem JSON-Array: [{"q":"Kriterium: A → B","items":[["Begriff","Wert"],["…","…"],["…","…"],["…","…"]]}]`,
     check:x=>typeof x.q==='string'&&Array.isArray(x.items)&&x.items.length===4&&x.items.every(i=>Array.isArray(i)&&typeof i[0]==='string'),
     fix:x=>({q:x.q.slice(0,60),items:x.items.map(i=>[String(i[0]).slice(0,28),String(i[1]||'').slice(0,20)]),ai:true})}
 };
@@ -731,42 +731,64 @@ const GEM={key:'',model:'gemini-flash-latest',think:false};
 try{GEM.key=localStorage.getItem('cd_gem_key')||'';GEM.model=localStorage.getItem('cd_gem_model')||GEM.model}catch(e){}
 // In der Claude-Vorschau fragt das Spiel Claude (Gemini ist dort blockiert), sonst Gemini, falls ein Key hinterlegt ist
 const aiProvider=()=>SAMPLE?'Claude':(GEM.key?'Gemini':null);
-async function geminiText(prompt,json=true){
-  const url=`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(GEM.model)}:generateContent?key=${encodeURIComponent(GEM.key)}`;
+// stream=true: Antwort kommt Stück für Stück (SSE) – abgebrochen wird nur, wenn 60 s lang nichts mehr kommt
+async function geminiText(prompt,json=true,stream=false){
+  const url=`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(GEM.model)}:${stream?'streamGenerateContent?alt=sse&':'generateContent?'}key=${encodeURIComponent(GEM.key)}`;
   // Ohne langes „Nachdenken“ antwortet Gemini viel schneller; kennt das Modell die Einstellung nicht, geht es ohne weiter
   const body={contents:[{role:'user',parts:[{text:prompt}]}],generationConfig:{...(json?{responseMimeType:'application/json'}:{}),...(GEM.think?{}:{thinkingConfig:{thinkingBudget:0}})}};
-  const ctl=new AbortController(),tm=setTimeout(()=>ctl.abort(),75000);let res;
-  try{res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:ctl.signal})}
-  catch(e){throw Object.assign(new Error(e&&e.name==='AbortError'?'keine Antwort nach 75 s':'Netzwerkfehler'),{code:'error'})}
-  finally{clearTimeout(tm)}
-  const d=await res.json().catch(()=>({}));
-  if(!res.ok&&res.status===400&&!GEM.think&&/think/i.test((d.error&&d.error.message)||'')){GEM.think=true;return geminiText(prompt,json)}
-  if(!res.ok){const e=new Error((d.error&&d.error.message)||('HTTP '+res.status));e.code=res.status===429?'rate_limited':(res.status===400||res.status===401||res.status===403)?'bad_key':'error';throw e}
-  return ((d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.candidates[0].content.parts)||[]).map(p=>p.text||'').join('')}
-async function askJSON(prompt){
-  if(!SAMPLE&&GEM.key){const t=await geminiText(prompt);try{return JSON.parse(t)}catch(e){const m=t.match(/\[[\s\S]*\]/);return m?JSON.parse(m[0]):null}}
+  const ctl=new AbortController();let why='',idle=null;
+  const arm=ms=>{clearTimeout(idle);idle=setTimeout(()=>{why=`keine Antwort nach ${ms/1000} s`;ctl.abort()},ms)};
+  const hard=setTimeout(()=>{why='Antwort dauerte über 4 Minuten';ctl.abort()},240000);
+  const fail=e=>Object.assign(new Error(why||(e&&e.message)||'Netzwerkfehler'),{code:'error'});
+  try{
+    arm(stream?60000:90000);let res;
+    try{res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:ctl.signal})}catch(e){throw fail(e)}
+    if(!res.ok){const d=await res.json().catch(()=>({})),m=(d.error&&d.error.message)||('HTTP '+res.status);
+      if(res.status===400&&!GEM.think&&/think/i.test(m)){GEM.think=true;clearTimeout(idle);clearTimeout(hard);return geminiText(prompt,json,stream)}
+      throw Object.assign(new Error(m),{code:res.status===429?'rate_limited':(res.status===400||res.status===401||res.status===403)?'bad_key':'error'})}
+    const txt=d=>((d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.candidates[0].content.parts)||[]).map(p=>p.text||'').join('');
+    if(!stream||!res.body||!res.body.getReader){const d=await res.json().catch(()=>({}));return txt(d)}
+    const rd=res.body.getReader(),dec=new TextDecoder();let buf='',out='',shown=0;
+    for(;;){arm(60000);let r;try{r=await rd.read()}catch(e){throw fail(e)}if(r.done)break;
+      buf+=dec.decode(r.value,{stream:true});let i;
+      while((i=buf.indexOf('\n'))>=0){const line=buf.slice(0,i).trim();buf=buf.slice(i+1);
+        if(line.startsWith('data:')){try{out+=txt(JSON.parse(line.slice(5)))}catch(e){}}}
+      AI.got=out.length;if(out.length-shown>1500){shown=out.length;aiStatus()}}
+    return out}
+  finally{clearTimeout(idle);clearTimeout(hard)}}
+const parseLoose=t=>{try{return JSON.parse(t)}catch(e){const m=t.match(/\{[\s\S]*\}/)||t.match(/\[[\s\S]*\]/);return m?JSON.parse(m[0]):null}};
+async function askJSON(prompt,stream=false){
+  if(!SAMPLE&&GEM.key)return parseLoose(await geminiText(prompt,true,stream));
   if(typeof SAMPLE.json==='function'){
     try{return await SAMPLE.json(prompt,{modelTier:'default'})}
     catch(e){if(e&&(e.code==='not_granted'||e.code==='rate_limited'))throw e}}
-  const r=await SAMPLE(prompt,{modelTier:'default'});const m=r&&r.text&&r.text.match(/\[[\s\S]*\]/);return m?JSON.parse(m[0]):null}
-async function aiGenerate(type){
-  if(!aiProvider()||!aiOn||AI.state[type]==='loading'||AI.state[type]==='ready')return;
-  AI.state[type]='loading';aiStatus();
+  const r=await SAMPLE(prompt,{modelTier:'default'});return r&&r.text?parseLoose(r.text):null}
+// EINE Anfrage für alle noch fehlenden KI-Spiele; die Antwort wird danach auf die Spiele verteilt
+async function aiBatch(types){
+  types=[...new Set(types)].filter(t=>AI_SPECS[t]&&AI.state[t]!=='loading'&&AI.state[t]!=='ready');
+  if(!aiProvider()||!aiOn||!types.length)return;
+  types.forEach(t=>AI.state[t]='loading');AI.err='';AI.got=0;aiStatus();
+  // Ein Wunsch der Spieler ersetzt den Themen-Mix des Mottos und gilt für jede einzelne Frage
+  const wish=S.aiWish?`\n\nWICHTIG – Wunsch der Spieler für den heutigen Abend: „${S.aiWish}“. Dieser Wunsch hat Vorrang vor allen Themenvorgaben oben: JEDE einzelne Frage bzw. Aufgabe muss dazu passen (Thema, Schwierigkeit und Ton). Halte aber alle übrigen Regeln und das Antwortformat oben genau ein.`:'';
+  const themes=S.aiWish?`passend zum Wunsch der Spieler (siehe unten)`:shuffle([...shuffle(MOTTO.t).slice(0,3),...shuffle(THEMES.filter(t=>!MOTTO.t.includes(t))).slice(0,2)]).join(', ');
+  const prompt=types.length===1?AI_SPECS[types[0]].prompt(themes)+wish
+    :`Du erstellst in EINER Antwort die Inhalte für ${types.length} Spiele eines Party-Abends am Fernseher. Antworte ausschließlich mit EINEM JSON-Objekt mit genau diesen Schlüsseln: ${types.map(t=>`"${t}"`).join(', ')}. Der Wert jedes Schlüssels ist genau das JSON, das die jeweilige Aufgabe unten als Antwort verlangt.\n\n`
+      +types.map(t=>`### Aufgabe "${t}"\n${AI_SPECS[t].prompt(themes)}`).join('\n\n')+wish;
   try{
-    // Ein Wunsch der Spieler ersetzt den Themen-Mix des Mottos und gilt für jede einzelne Frage
-    const wish=S.aiWish?`\n\nWICHTIG – Wunsch der Spieler für den heutigen Abend: „${S.aiWish}“. Dieser Wunsch hat Vorrang vor allen Themenvorgaben oben: JEDE einzelne Frage bzw. Aufgabe muss dazu passen (Thema, Schwierigkeit und Ton). Halte aber alle übrigen Regeln und das Antwortformat oben genau ein.`:'';
-    const themes=S.aiWish?`passend zum Wunsch der Spieler (siehe unten)`:shuffle([...shuffle(MOTTO.t).slice(0,3),...shuffle(THEMES.filter(t=>!MOTTO.t.includes(t))).slice(0,2)]).join(', ');
-    const prompt=AI_SPECS[type].prompt(themes)+wish;
-    const t0=now();let res;
-    try{res=await askJSON(prompt)}catch(e){if(e&&(e.code==='not_granted'||e.code==='bad_key'))throw e; // ein zweiter Versuch bei Netz-/Limit-Fehlern
-      await new Promise(r=>setTimeout(r,e&&e.code==='rate_limited'?15000:2500));res=await askJSON(prompt)}
-    AI.ms[type]=now()-t0;
-    const sp=AI_SPECS[type],arr=sp.parse?sp.parse(res):Array.isArray(res)?res:(res&&Array.isArray(res.items)?res.items:[]);
-    const items=arr.filter(x=>{try{return x&&AI_SPECS[type].check(x)}catch(e){return false}}).map(AI_SPECS[type].fix);
-    if(items.length>=4){AI.pool[type]=shuffle(items);AI.state[type]='ready'}else{AI.state[type]='error';AI.err=`${GAMES[type].name}: Antwort unbrauchbar`}
-  }catch(e){AI.state[type]='error';AI.err=`${GAMES[type].name}: ${String((e&&e.message)||e).slice(0,80)}`;if(e&&e.code==='not_granted'){aiOn=false;AI.denied=true}}
+    let res;const t0=now();
+    try{res=await askJSON(prompt,true)}catch(e){if(e&&(e.code==='not_granted'||e.code==='bad_key'))throw e; // ein zweiter Versuch bei Netz-/Limit-Fehlern
+      AI.got=0;await new Promise(r=>setTimeout(r,e&&e.code==='rate_limited'?15000:2500));res=await askJSON(prompt,true)}
+    AI.ms=now()-t0;const bad=[];
+    for(const t of types){const sp=AI_SPECS[t],raw=res&&!Array.isArray(res)&&res[t]!==undefined?res[t]:(types.length===1?res:null);
+      let items=[];try{const arr=sp.parse?sp.parse(raw):Array.isArray(raw)?raw:(raw&&Array.isArray(raw.items)?raw.items:[]);
+        items=arr.filter(x=>{try{return x&&sp.check(x)}catch(e){return false}}).map(sp.fix)}catch(e){}
+      if(items.length>=4){AI.pool[t]=shuffle(items);AI.state[t]='ready'}else{AI.state[t]='error';bad.push(GAMES[t].name)}}
+    if(bad.length)AI.err=`${bad.join(', ')}: Antwort unbrauchbar`;
+  }catch(e){types.forEach(t=>{if(AI.state[t]==='loading')AI.state[t]='error'});AI.err=String((e&&e.message)||e).slice(0,90);
+    if(e&&e.code==='not_granted'){aiOn=false;AI.denied=true}}
   aiStatus();
 }
+const aiGenerate=t=>aiBatch([t]);
 // Key kommt im Fernseher-Modus vom Handy des Gastgebers; gespeichert wird er nur am Fernseher
 let AIMSG={t:'',ok:null},AIREMOTE=null,MUREMOTE=null;
 const muLocal=()=>({ok:DZ.ok,title:DZ.title,msg:MUMSG.t,mok:MUMSG.ok,bgm:BGM.on});
@@ -783,8 +805,8 @@ function setGemKey(key){
     .catch(e=>{AIMSG={t:(e.code==='bad_key'?'Key ungültig: ':e.code==='rate_limited'?'Limit erreicht: ':'Fehler: ')+String(e.message||'').slice(0,90),ok:false}})
     .finally(()=>{if(GEM.key===key)renderAll()})}
 // Wird direkt aus dem Klick des Gastgebers gestartet (erste Nutzung fragt einmal nach Erlaubnis)
-async function aiPrefetch(reset){if(reset){AI.state={};AI.pool={}}if(!aiOn||!aiProvider())return;AI.err='';await Promise.all([...new Set(S.prog)].filter(t=>AI_SPECS[t]).map((t,k)=>new Promise(r=>setTimeout(r,k*1200)).then(()=>aiGenerate(t))))}
-const aiReady=()=>{const t=[...new Set(S.prog)].filter(x=>AI_SPECS[x]);if(!t.length)return '';const n=t.filter(x=>AI.state[x]==='ready').length,l=t.some(x=>AI.state[x]==='loading');const e=t.some(x=>AI.state[x]==='error');return ` · ${n}/${t.length} Spiele fertig${l?' …':''}${e&&AI.err?` · ⚠️ ${esc(AI.err)}`:''}`};
+async function aiPrefetch(reset){if(reset){AI.state={};AI.pool={}}if(!aiOn||!aiProvider())return;await aiBatch(S.prog)}
+const aiReady=()=>{const t=[...new Set(S.prog)].filter(x=>AI_SPECS[x]);if(!t.length)return '';const n=t.filter(x=>AI.state[x]==='ready').length,l=t.some(x=>AI.state[x]==='loading');const e=t.some(x=>AI.state[x]==='error');return ` · ${n}/${t.length} Spiele fertig${l?(AI.got?` · ${(AI.got/1000).toFixed(1)}k Zeichen …`:' …'):''}${e&&AI.err?` · ⚠️ ${esc(AI.err)}`:''}`};
 function aiStatus(){
   const pv=aiProvider(),b=$('#aiBtn');if(b){b.disabled=!pv;b.style.opacity=pv?1:.55;
     b.textContent=!pv?'🤖 KI aus (Gemini-Key fehlt)':AI.denied?'🤖 KI nicht erlaubt':`🤖 KI-Fragen: ${aiOn?'an':'aus'} · ${pv}`}
@@ -1474,8 +1496,8 @@ function startGame(gi){
   renderAll();sfx('whoosh');
   step(()=>{
     // Falls Claude die Fragen für dieses Spiel noch erstellt: kurz warten (max. 30 s), sonst Fallback-Fragen
-    if(aiOn&&aiProvider()&&AI_SPECS[type]&&!AI.state[type])aiGenerate(type);
-    if(aiOn&&aiProvider()&&AI.state[type]==='loading'){S.cur.aiWait=true;renderTV();step(()=>{if(S.cur.aiWait){S.cur.aiWait=false;startRound()}},45000)}
+    if(aiOn&&aiProvider()&&AI_SPECS[type]&&!AI.state[type])aiPrefetch();
+    if(aiOn&&aiProvider()&&AI.state[type]==='loading'){S.cur.aiWait=true;renderTV();step(()=>{if(S.cur.aiWait){S.cur.aiWait=false;startRound()}},90000)}
     else startRound();
   },3600);
 }
