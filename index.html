@@ -483,7 +483,7 @@ body.mode-phone .pscreen{border-radius:0;padding-top:env(safe-area-inset-top);pa
    Ohne Parameter: Fernseher (zeigt QR-Code, führt das Spiel) · ?r=CODE oder #CODE: Handy-Controller
    ?demo: Prototyp-Ansicht mit Fernseher und vier simulierten Handys auf einer Seite
    ===================================================================== */
-const APPV='2026-11-15j'; // bei Änderungen am Protokoll zwischen Fernseher und Handy hochzählen
+const APPV='2026-11-15k'; // bei Änderungen am Protokoll zwischen Fernseher und Handy hochzählen
 const QS=new URLSearchParams(location.search);
 let ROOM=(QS.get('r')||(/^#[A-Za-z0-9]{4}$/.test(location.hash)?location.hash.slice(1):'')).toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,4);
 const MODE=typeof Peer==='undefined'||QS.has('demo')?'demo':(QS.has('r')||ROOM?'phone':'tv');
@@ -748,7 +748,8 @@ async function geminiText(prompt,json=true,stream=false,model){
     arm(stream?60000:90000);let res;
     try{res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:ctl.signal})}catch(e){throw fail(e)}
     if(!res.ok){const d=await res.json().catch(()=>({})),m=(d.error&&d.error.message)||('HTTP '+res.status);
-      if(res.status===400&&!GEM.think&&/think/i.test(m)){GEM.think=true;clearTimeout(idle);clearTimeout(hard);return geminiText(prompt,json,stream,model)}
+      if(res.status===400&&!GEM.think){ // z. B. Modelle, die die Denk-Einstellung nicht kennen: einmal ohne sie wiederholen
+        GEM.think=true;clearTimeout(idle);clearTimeout(hard);return geminiText(prompt,json,stream,model)}
       throw Object.assign(new Error(m),{code:res.status===429?'rate_limited':(res.status===400||res.status===401||res.status===403)?'bad_key':'error'})}
     const txt=d=>((d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.candidates[0].content.parts)||[]).map(p=>p.text||'').join('');
     if(!stream||!res.body||!res.body.getReader){const d=await res.json().catch(()=>({}));return txt(d)}
