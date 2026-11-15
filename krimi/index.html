@@ -224,7 +224,7 @@ label.l{display:block;color:var(--mute);font-size:13px;font-weight:600;margin:16
    Der Fernseher schreibt mit Gemini den Fall (Fallplan → Kapitel → Fotos → Stimmen), hält den Spielstand
    und speichert alles in IndexedDB, damit ein Neuladen den Fall nicht beendet.
    ===================================================================== */
-const APPV='2026-11-15ke';
+const APPV='2026-11-15kf';
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const now=()=>Date.now();
@@ -862,7 +862,13 @@ function hostNet(){
       {const q=P[conn.pid];if(q&&NET.conns[conn.pid]===conn){const back=q.joined&&!online(q);q.seen=Date.now();if(back){renderTV();pushAll()}}}
       if(d.t==='hb')return;
       if(d.t==='hello'&&typeof d.cid==='string'){let pid=NET.cids[d.cid];
-        if(pid==null){pid=P.length;if(pid>=6){try{conn.send({t:'full'})}catch(e){}return}P.push({id:pid,name:'',joined:false,color:COLORS[pid]});NET.cids[d.cid]=pid}
+        if(pid==null){pid=P.length;
+          // Raum voll? Platz eines Spielers übernehmen, der offline ist (Spielleiter zuletzt)
+          if(pid>=6){const free=P.filter(q=>!online(q)&&!(NET.conns[q.id]&&NET.conns[q.id].open&&Date.now()-(q.seen||0)<OFF_MS)).sort((x,y)=>(x.id===hostId)-(y.id===hostId)||(x.seen||0)-(y.seen||0))[0];
+            if(!free){try{conn.send({t:'full'})}catch(e){}return}
+            pid=free.id;for(const k in NET.cids)if(NET.cids[k]===pid)delete NET.cids[k];const oc=NET.conns[pid];delete NET.conns[pid];if(oc){try{oc.close()}catch(e){}}
+            P[pid]={id:pid,name:'',joined:false,color:COLORS[pid]}}
+          else P.push({id:pid,name:'',joined:false,color:COLORS[pid]});NET.cids[d.cid]=pid}
         const old=NET.conns[pid];NET.conns[pid]=conn;conn.pid=pid;P[pid].seen=Date.now();if(old&&old!==conn){try{old.close()}catch(e){}}
         tell(pid,{t:'welcome',pid,room:ROOM});tell(pid,{t:'state',s:pubState(pid)});savePlayers()}
       else if(d.t==='msg'&&conn.pid!=null&&NET.conns[conn.pid]===conn&&d.m&&typeof d.m.type==='string'){handle(conn.pid,d.m);if(d.m.type==='join')savePlayers()}});
