@@ -337,6 +337,31 @@ header p{font-size:13px;color:var(--muted);margin-top:3px}
 .cdraw{width:100%;max-height:100%;aspect-ratio:1;background:#fffdf6;border-radius:5cqw;box-shadow:inset 0 0 0 .8cqw #dbe6f5;touch-action:none;cursor:crosshair}
 .cdraw polyline{fill:none;stroke:var(--pc);stroke-width:3;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
 
+/* ---------- Echter Mehrspieler-Modus: Fernseher (mode-tv) und Handy (mode-phone) ---------- */
+body.mode-tv{padding:0;background:#000;overflow:hidden}
+body.mode-tv header,body.mode-tv .howto,body.mode-tv .gempanel,body.mode-tv .label,body.mode-tv .stand,body.mode-tv .app>div:last-child{display:none!important}
+body.mode-tv .app{display:grid;grid-template-columns:auto;place-items:center;place-content:center;max-width:none;height:100vh;gap:0}
+body.mode-tv .app>div:first-child{width:min(100vw,calc(100vh*16/9))}
+body.mode-tv .tv{border:0;border-radius:0;box-shadow:none}
+body.mode-phone{padding:0;overflow:hidden;position:fixed;inset:0;background:#eaf3ff}
+body.mode-phone header,body.mode-phone .howto,body.mode-phone .gempanel,body.mode-phone .label,body.mode-phone .app>div:first-child{display:none!important}
+body.mode-phone .app{display:block;max-width:none}
+body.mode-phone .phones{display:block;max-width:none;margin:0}
+body.mode-phone .phonebox{display:none}
+body.mode-phone .phonebox.me{display:block}
+body.mode-phone .phonebox small,body.mode-phone .notch,body.mode-phone .pstatus{display:none}
+body.mode-phone .phone{width:min(100vw,calc(100dvh*.6));height:100dvh;aspect-ratio:auto;margin:0 auto;border-radius:0;padding:0;box-shadow:none;background:none}
+body.mode-phone .pscreen{border-radius:0;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
+#net{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center;background:linear-gradient(180deg,#fff,#dcecff);font-size:20px;line-height:1.35}
+#net[hidden]{display:none}
+#net b{font-size:26px}
+#net input{font:inherit;font-size:32px;font-weight:700;width:6.5em;text-align:center;text-transform:uppercase;letter-spacing:.2em;border:3px solid #dbe6f5;border-radius:14px;padding:10px;color:var(--ink)}
+#net button{font:inherit;font-weight:700;font-size:22px;color:#fff;background:var(--blue);border:0;border-radius:16px;padding:12px 28px}
+.tvnote{position:absolute;left:50%;bottom:1.2cqw;transform:translateX(-50%);z-index:6;background:#1f2a44;color:#fff;font-size:1.5cqw;border-radius:2cqw;padding:.4cqw 1.6cqw;white-space:nowrap}
+.tvnote[hidden]{display:none}
+.joinurl{font-size:1cqw!important;margin-top:.5cqw;word-break:break-all}
+.netline{font-size:1.4cqw;font-weight:600;color:#e8590c}
+
 /* ---------- Figuren ---------- */
 .av{display:block;overflow:visible;height:auto}
 .av .body{transform-box:view-box;transform-origin:60px 140px}
@@ -436,7 +461,7 @@ header p{font-size:13px;color:var(--muted);margin-top:3px}
 <div class="app">
   <div>
     <div class="label">Fernseher</div>
-    <div class="tv"><div class="bg" id="bg"></div><div id="tv"></div><div id="fx"></div></div>
+    <div class="tv"><div class="bg" id="bg"></div><div id="tv"></div><div id="fx"></div><div class="tvnote" id="tvnote" hidden>🔊 Für Ton einmal klicken oder OK drücken</div></div>
     <div class="stand"><span class="stick">FIRE TV</span></div>
   </div>
   <div>
@@ -445,7 +470,23 @@ header p{font-size:13px;color:var(--muted);margin-top:3px}
   </div>
 </div>
 
+<div id="net" hidden></div>
+<script src="vendor/peerjs.min.js"></script>
+<script src="vendor/qrcode.min.js"></script>
 <script>
+/* =====================================================================
+   MODUS
+   Ohne Parameter: Fernseher (zeigt QR-Code, führt das Spiel) · ?r=CODE oder #CODE: Handy-Controller
+   ?demo: Prototyp-Ansicht mit Fernseher und vier simulierten Handys auf einer Seite
+   ===================================================================== */
+const QS=new URLSearchParams(location.search);
+let ROOM=(QS.get('r')||(/^#[A-Za-z0-9]{4}$/.test(location.hash)?location.hash.slice(1):'')).toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,4);
+const MODE=typeof Peer==='undefined'||QS.has('demo')?'demo':(QS.has('r')||ROOM?'phone':'tv');
+if(MODE==='demo')ROOM='K7QX';
+let ME=null; // eigene Spielernummer (nur im Handy-Modus)
+document.body.classList.add('mode-'+MODE);
+const BASE=location.origin+location.pathname;
+
 /* =====================================================================
    DATEN
    ===================================================================== */
@@ -764,7 +805,7 @@ const checkSyn=(texts,syn)=>texts.some(t=>{const tt=toks(t);return tt.length&&sy
    SOUND
    ===================================================================== */
 let AC=null,muted=false,musicSrc=null;
-function unlockAudio(){try{if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume()}catch(e){}}
+function unlockAudio(){try{if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume().then(()=>{const n=$('#tvnote');if(n)n.hidden=true}).catch(()=>{})}catch(e){}}
 function tone(f,d,type='sine',v=.14,delay=0,slide=0){if(!AC||muted)return;try{const t=AC.currentTime+delay,o=AC.createOscillator(),g=AC.createGain();
   o.type=type;o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+d);
   g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(v,t+.012);g.gain.exponentialRampToValueAtTime(.0001,t+d);
@@ -996,6 +1037,14 @@ function fakeQR(){const n=25;let seed=11;const r=()=>(seed=(seed*9301+49297)%233
   for(let y=0;y<n;y++)for(let x=0;x<n;x++){if((x<8&&y<8)||(x>n-9&&y<8)||(x<8&&y>n-9))continue;if(r()>.52)s+=`<rect x="${x}" y="${y}" width="1" height="1" fill="#1F2A44"/>`}
   return `<svg class="qr" viewBox="-2 -2 ${n+4} ${n+4}" shape-rendering="crispEdges"><rect x="-2" y="-2" width="${n+4}" height="${n+4}" fill="#fff"/>${s}${fin(0,0)}${fin(n-7,0)}${fin(0,n-7)}</svg>`}
 const QR=fakeQR();
+// Echter QR-Code mit dem Beitritts-Link (nur im Fernseher-Modus)
+function realQR(){
+  if(!ROOM||typeof qrcode==='undefined')return QR;
+  if(realQR.k===ROOM)return realQR.c;
+  const q=qrcode(0,'M');q.addData(BASE+'?r='+ROOM);q.make();const n=q.getModuleCount();let s='';
+  for(let y=0;y<n;y++)for(let x=0;x<n;x++)if(q.isDark(y,x))s+=`<rect x="${x}" y="${y}" width="1.03" height="1.03"/>`;
+  realQR.k=ROOM;
+  return realQR.c=`<svg class="qr" viewBox="-2 -2 ${n+4} ${n+4}" shape-rendering="crispEdges"><rect x="-2" y="-2" width="${n+4}" height="${n+4}" fill="#fff"/><g fill="#1F2A44">${s}</g></svg>`}
 
 /* ---------- Karte ---------- */
 const proj=(lat,lon)=>[(lon-5.6)*63,(55.2-lat)*100];
@@ -1023,7 +1072,110 @@ function drawSVG(a,e,running){const n=a.s.length,T=13,d=1;
    ===================================================================== */
 // Simulierte Latenz; Nachrichten eines Handys kommen immer in der gesendeten Reihenfolge an
 const lastDue={};
-function send(pid,msg){const due=Math.max(now()+30+Math.random()*40,(lastDue[pid]||0)+1);lastDue[pid]=due;setTimeout(()=>handle(pid,msg),due-now())}
+function send(pid,msg){
+  if(MODE==='phone'){if(NET.conn&&NET.conn.open){try{NET.conn.send({t:'msg',m:msg})}catch(e){}}return}
+  const due=Math.max(now()+30+Math.random()*40,(lastDue[pid]||0)+1);lastDue[pid]=due;setTimeout(()=>handle(pid,msg),due-now())}
+
+/* =====================================================================
+   ECHTES NETZWERK (WebRTC über PeerJS)
+   Der Fernseher führt das Spiel und schickt jedem Handy den Spielstand; die Handys zeichnen
+   ihre Ansicht selbst und schicken nur Eingaben zurück. Der öffentliche PeerJS-Dienst stellt
+   lediglich den Kontakt her, danach läuft alles direkt zwischen den Geräten.
+   ===================================================================== */
+const NET={peer:null,conn:null,conns:{},cids:{},status:'',everOpen:false,dialAt:0,buzzAt:0,full:false,cid:''};
+const peerId=code=>'couchduell-'+code.toLowerCase();
+function snapshot(){
+  let cur=null;
+  if(S.cur){cur={...S.cur,r:null};if(S.cur.r){cur.r={...S.cur.r};delete cur.r.clip;delete cur.r.full}}
+  return{S:{...S,cur},PLAY,P:P.map(p=>({id:p.id,joined:p.joined,name:p.name,color:p.color,hat:p.hat,score:p.score,prevScore:p.prevScore}))}}
+function tell(i,o){const c=NET.conns[i];if(c&&c.open){try{c.send(o)}catch(e){}}}
+const pushState=i=>tell(i,{t:'state',s:snapshot()});
+
+/* ---------- Fernseher ---------- */
+function hostNet(code){
+  const ABC='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  ROOM=code||Array.from({length:4},()=>ABC[Math.floor(Math.random()*ABC.length)]).join('');
+  const peer=NET.peer=new Peer(peerId(ROOM));
+  peer.on('open',()=>{NET.everOpen=true;NET.status='';if(S.phase==='lobby')renderTV()});
+  peer.on('connection',conn=>{
+    conn.on('data',d=>{
+      if(!d||typeof d!=='object')return;
+      if(d.t==='hello'&&typeof d.cid==='string'){
+        // Jedes Handy hat eine feste Kennung: nach Bildschirmsperre oder Neuladen landet es wieder auf seinem Platz
+        let pid=NET.cids[d.cid];
+        if(pid==null){pid=[0,1,2,3].find(i=>!P[i].joined&&!Object.values(NET.cids).includes(i));
+          if(pid==null){try{conn.send({t:'full'})}catch(e){}return}
+          NET.cids[d.cid]=pid}
+        const old=NET.conns[pid];NET.conns[pid]=conn;conn.pid=pid;
+        if(old&&old!==conn){try{old.close()}catch(e){}}
+        tell(pid,{t:'welcome',pid,room:ROOM});pushState(pid)}
+      else if(d.t==='msg'&&conn.pid!=null&&NET.conns[conn.pid]===conn&&d.m&&typeof d.m.type==='string'){
+        if('t' in d.m)d.m.t=now(); // Uhren der Handys sind nicht vergleichbar – es zählt die Ankunft am Fernseher
+        unlockAudio();handle(conn.pid,d.m)}});
+    conn.on('close',()=>dropConn(conn));conn.on('error',()=>dropConn(conn))});
+  peer.on('error',e=>{
+    if(e.type==='unavailable-id'&&!NET.everOpen)ROOM=''; // Code schon vergeben → neuer Code
+    else if(e.type!=='peer-unavailable'){NET.status='Keine Verbindung zum Vermittlungsdienst – neuer Versuch …';if(S.phase==='lobby')renderTV()}});
+}
+function dropConn(conn){
+  const pid=conn.pid;if(pid==null||NET.conns[pid]!==conn)return;delete NET.conns[pid];
+  if(!P[pid].joined)for(const k in NET.cids)if(NET.cids[k]===pid)delete NET.cids[k]} // Platz wieder frei, wenn noch nicht beigetreten
+function hostWatch(){
+  const p=NET.peer;
+  if(!p||p.destroyed)hostNet(ROOM);
+  else if(p.disconnected){try{p.reconnect()}catch(e){}}}
+
+/* ---------- Handy ---------- */
+function netMsg(html){const n=$('#net');n.innerHTML=html;n.hidden=false}
+function phoneNet(){
+  if(!ROOM){netMsg(`<div style="font-size:44px">🛋️</div><b>Couch-Duell</b><div>Gib den Raumcode vom Fernseher ein:</div><input id="roomIn" maxlength="4" autocomplete="off" autocapitalize="characters" placeholder="CODE"><button id="roomGo">Beitreten</button>`);
+    const go=()=>{const v=$('#roomIn').value.toUpperCase().replace(/[^A-Z0-9]/g,'');if(v.length===4)location.href=BASE+'?r='+v};
+    $('#roomGo').addEventListener('click',go);$('#roomIn').addEventListener('keydown',e=>{if(e.key==='Enter')go()});return}
+  // Kennung pro Tab (sessionStorage): übersteht Neuladen, aber zwei Tabs im selben Browser sind zwei Spieler
+  try{NET.cid=sessionStorage.getItem('cd_cid')||'';if(!NET.cid){NET.cid=Math.random().toString(36).slice(2)+Date.now().toString(36);sessionStorage.setItem('cd_cid',NET.cid)}}
+  catch(e){NET.cid=NET.cid||Math.random().toString(36).slice(2)+Date.now().toString(36)}
+  netMsg(`<div style="font-size:44px">🛋️</div><div>Verbinde mit Raum</div><b>${ROOM}</b>`);
+  phonePeer();
+  setInterval(()=>{const p=NET.peer;
+    if(!p||p.destroyed)phonePeer();
+    else if(p.disconnected){try{p.reconnect()}catch(e){}}
+    else if((!NET.conn||!NET.conn.open||NET.full)&&now()-NET.dialAt>(NET.full?8000:4000))dial()},1500);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden){wake();if(!NET.conn||!NET.conn.open)dial()}});
+}
+function phonePeer(){
+  const peer=NET.peer=new Peer();
+  peer.on('open',dial);
+  peer.on('error',e=>{if(e.type==='peer-unavailable'&&ME==null)netMsg(`<div style="font-size:44px">🔍</div><div>Raum <b>${ROOM}</b> nicht gefunden.</div><div>Läuft das Spiel am Fernseher?<br>Ich versuche es weiter …</div>`)});
+}
+function dial(){
+  const peer=NET.peer;if(!peer||peer.destroyed||peer.disconnected||!peer.open)return;
+  NET.dialAt=now();
+  if(NET.conn){try{NET.conn.close()}catch(e){}}
+  const conn=NET.conn=peer.connect(peerId(ROOM),{reliable:true,serialization:'json'});
+  conn.on('open',()=>{try{conn.send({t:'hello',cid:NET.cid})}catch(e){}});
+  conn.on('data',d=>{
+    if(!d||NET.conn!==conn)return;
+    if(d.t==='welcome'){ME=d.pid;NET.full=false;lastH='';
+      document.querySelectorAll('.phonebox').forEach((b,i)=>b.classList.toggle('me',i===ME));$('#net').hidden=true}
+    else if(d.t==='full'){NET.full=true;netMsg('<div style="font-size:44px">🚪</div><div>Der Raum ist voll<br>(höchstens 4 Spieler).</div>')}
+    else if(d.t==='state'&&ME!=null)applyState(d.s);
+    else if(d.t==='nolisten')stopListening()});
+  conn.on('close',()=>{if(NET.conn===conn){NET.conn=null;netMsg('<div style="font-size:44px">📡</div><div>Verbindung verloren –<br>verbinde neu …</div>')}});
+}
+// Spielstand vom Fernseher übernehmen; eigene Entwürfe (Name, Tipp, Pin …) bleiben lokal
+function applyState(s){
+  const oldRid=S.rid,me=P[ME];
+  Object.assign(S,s.S);PLAY=s.PLAY;
+  s.P.forEach(q=>{const p=P[q.id];
+    if(q.id!==ME)Object.assign(p,q);
+    else{p.joined=q.joined;p.score=q.score;p.prevScore=q.prevScore;if(q.joined){p.name=q.name;p.color=q.color;p.hat=q.hat}}});
+  if(S.rid!==oldRid){drawing=null;swipeStart=null;stopListening();
+    Object.assign(me,{circleHint:'',draftGuess:'',draftSay:'',draftPin:null,draftOrder:[],heard:'',micErr:'',listening:false})}
+  const r=S.cur&&S.cur.r;
+  if(isListening(ME)&&now()-NET.buzzAt>1500&&!(S.phase==='play'&&r&&r.state==='answering'&&r.buzzer===ME))stopListening();
+  renderPhone(ME)}
+let wakeLock=null;
+function wake(){try{if(navigator.wakeLock&&(!wakeLock||wakeLock.released))navigator.wakeLock.request('screen').then(l=>wakeLock=l).catch(()=>{})}catch(e){}}
 
 function handle(pid,m){
   const p=P[pid],c=S.cur,r=c&&c.r;
@@ -1058,7 +1210,7 @@ function handle(pid,m){
 
     /* Buzzer-Spiele: Quiz, Zeichnen, Musik */
     case 'buzz':
-      if(!(inPlay('quiz')||inPlay('draw')||inPlay('music'))||r.state!=='open'||r.locked[pid]||r.loading){if(isListening(pid))stopListening();if(p.joined&&S.phase==='play')renderPhone(pid);return}
+      if(!(inPlay('quiz')||inPlay('draw')||inPlay('music'))||r.state!=='open'||r.locked[pid]||r.loading){tell(pid,{t:'nolisten'});if(isListening(pid))stopListening();if(p.joined&&S.phase==='play')renderPhone(pid);return}
       r.state='answering';r.buzzer=pid;r.heard='';r.buzzId=(r.buzzId||0)+1;r.ansDeadline=now()+12000;pause(r.clock);
       if(c.type==='music')stopMusic();
       sfx('buzz');renderAll();if(p.micErr)focusSay(pid);
@@ -1143,7 +1295,7 @@ function handle(pid,m){
 function wrongAnswer(pid,text){
   const c=S.cur,r=c.r;if(S.phase!=='play'||r.state!=='answering'||r.buzzer!==pid)return;
   if(!r.lastSay||r.lastSay.pid!==pid||now()-r.lastSay.at>500)r.lastSay={pid,text:text||'(keine Antwort)',ok:false,at:now()};
-  r.locked[pid]=true;P[pid].shakeAt=now();sfx('wrong');if(isListening(pid))stopListening();
+  r.locked[pid]=true;P[pid].shakeAt=now();sfx('wrong');tell(pid,{t:'nolisten'});if(isListening(pid))stopListening();
   if(joined().every(q=>r.locked[q.id])){endRound(null);return}
   r.state='open';r.buzzer=null;resume(r.clock);
   if(c.type==='music')playBuf(r.clip,true);
@@ -1271,12 +1423,12 @@ function tvLobby(){
     :`<div class="slot"><div class="empty">?</div><div class="sname dim">frei</div></div>`).join('');
   return `<div class="lobby"><div class="logo">${word('Couch','')}<span class="l">-</span>${word('Duell','d')}</div>
     <div class="daypill">📅 ${DATE_TXT} · ${MOTTO.e} <b>${MOTTO.n}</b>${streak()>1?` · 🔥 ${streak()} Abende in Folge`:''}</div>
-    <div class="lgrid"><div class="joincard">${QR}<p>Mit dem Handy scannen</p><div class="code">Raumcode<b>K7QX</b></div></div><div class="slots">${slots}</div></div>
+    <div class="lgrid"><div class="joincard">${MODE==='tv'?realQR():QR}<p>Mit dem Handy scannen</p><div class="code">Raumcode<b>${ROOM&&(MODE!=='tv'||NET.everOpen)?ROOM:'····'}</b></div>${MODE==='tv'&&NET.everOpen?`<p class="joinurl">${esc((location.host+location.pathname).replace(/\/(index\.html)?$/,''))}#${ROOM}</p>`:''}</div><div class="slots">${slots}</div></div>
     <div class="gamelist">${S.prog.map((t,k)=>`<span><b>${k+1}</b> ${GAMES[t].icon} ${GAMES[t].name}</span>`).join('')}</div>
     <div class="inforow">${S.prog.includes('music')?`<div class="ailine" style="color:#1f7a5a;background:#e6fbf2">🎵 Hit-Quiz: ${S.music==='melodien'?'eingebaute Melodien':'Deezer · '+esc(({charts:'Charts weltweit',evergreens:'Größte Hits aller Zeiten'})[S.music]||S.music)}</div>`:''}
     ${aiProvider()&&aiOn?`<div class="ailine">🤖 ${aiProvider()} schreibt neue Fragen zum Motto</div>`:''}
     ${hof()?`<div class="ailine" style="color:#a86a00;background:#fff6dc">🏆 Dauerwertung: ${hof()}</div>`:''}</div>
-    <div class="hint">${n<2?'Warte auf Spieler … (mindestens 2)':`${esc(host.name)} kann den Abend jetzt starten!`}</div></div>`}
+    <div class="hint">${n<2?'Warte auf Spieler … (mindestens 2)':`${esc(host.name)} kann den Abend jetzt starten!${MODE==='tv'?' (oder OK auf der Fernbedienung)':''}`}</div>${NET.status?`<div class="netline">📡 ${NET.status}</div>`:''}</div>`}
 function tvIntro(){const c=S.cur,g=GAMES[c.type];
   return `<div class="intro"><div class="rays"></div><div class="icard">${c.skipped?`<div class="skipnote">⏭ ${esc(c.skipped)} übersprungen</div>`:''}<div class="iround">Spiel ${S.gi+1} von ${PLAY.length}</div><div class="iicon">${g.icon}</div><div class="iname">${g.name}</div><div class="idesc">${g.desc}</div>
     <div class="irule">Wer zuerst ${S.target} Rundenpunkte hat, gewinnt das Spiel.</div><div class="ipts">Spielsieg: +${ptsTxt(c.pts)}</div>
@@ -1357,7 +1509,7 @@ function tvFinal(){
   const tie=s[1]&&s[0].score===s[1].score,title=tie?'Unentschieden! 🤝':`🏆 ${esc(s[0].name)} gewinnt!`;
   return `<div class="final"><div class="rays"></div><div class="ftitle">${title}</div><div class="fsub">${hof()?`🏆 Dauerwertung: ${hof()} · `:''}Morgen wartet ein neues Abendprogramm!</div><div class="podium">${order.map(p=>{const r=Math.min(rankOf(p),4),d=({1:.9,2:.6,3:.3,4:.1})[r];
     return `<div class="pcol"><div class="podav" style="animation-delay:${d+.5}s">${avatar(p,{mood:r===1?'joy':'happy',cls:r===1?'jump':'idle'})}</div><div class="ptag" style="animation-delay:${d+.6}s">${esc(p.name)}</div><div class="pblock r${r}" style="height:${H[r]}cqw;animation-delay:${d}s">${r}<small>${ptsTxt(p.score)}</small></div></div>`}).join('')}</div></div>`}
-function renderTV(){$('#tv').innerHTML=({lobby:tvLobby,intro:tvIntro,play:tvPlay,roundEnd:tvRoundEnd,gameWin:tvGameWin,scores:tvScores,final:tvFinal})[S.phase]()}
+function renderTV(){if(MODE==='phone')return;$('#tv').innerHTML=({lobby:tvLobby,intro:tvIntro,play:tvPlay,roundEnd:tvRoundEnd,gameWin:tvGameWin,scores:tvScores,final:tvFinal})[S.phase]()}
 function animateScores(){requestAnimationFrame(()=>requestAnimationFrame(()=>{
   document.querySelectorAll('.bfill').forEach(b=>b.style.width=b.dataset.w+'%');
   document.querySelectorAll('.bnum').forEach(el=>{const a=+el.dataset.from,b=+el.dataset.to;if(a===b)return;const t0=now()+400;
@@ -1456,11 +1608,19 @@ function phoneBody(i){
       return `<div class="pc-center"><div class="pbig bounce">${['🥇','🥈','🥉','🎖️'][Math.min(r,4)-1]}</div><div class="ptxt"><b>${r===1?'Du hast gewonnen!':'Platz '+r}</b></div><div class="psmall">${ptsTxt(p.score)}</div>${host?`<button class="pbtn" data-act="restart" data-p="${i}">Nochmal spielen</button>`:''}</div>`}
   }
   return ''}
-function renderPhone(i){const p=P[i];$('#phone'+i).style.setProperty('--pc',p.color);
+let lastH='';const normH=h=>h.replace(/g\d+/g,'');
+function renderPhone(i){
+  if(MODE==='tv'){pushState(i);return} // echte Handys bekommen den Spielstand und zeichnen selbst
+  if(MODE==='phone'&&i!==ME)return;
+  const p=P[i];$('#phone'+i).style.setProperty('--pc',p.color);
+  const h=phoneHTML(i);
+  if(MODE==='phone'){const n=normH(h);if(n===lastH)return;lastH=n} // unverändert → nicht neu zeichnen (Tastatur und Fokus bleiben)
+  $('#ps'+i).innerHTML=h}
+function phoneHTML(i){const p=P[i];
   // Gastgeber kann jederzeit das laufende Spiel überspringen (zweimal tippen zum Bestätigen)
   const skip=p.joined&&i===S.hostId&&['intro','play','roundEnd'].includes(S.phase)
     ?`<button class="skipbtn ${now()-p.skipArm<3000?'armed':''}" data-act="skip" data-p="${i}">${now()-p.skipArm<3000?'Nochmal tippen zum Überspringen':'⏭ Spiel überspringen'}</button>`:'';
-  $('#ps'+i).innerHTML=`<div class="pstatus"><span>20:15</span><span>K7QX</span></div><div class="phead">${p.joined?esc(p.name)+(i===S.hostId?' 👑':''):'Couch-Duell'}</div><div class="pbody">${phoneBody(i)}${skip}</div>`}
+  return `<div class="pstatus"><span>20:15</span><span>${ROOM}</span></div><div class="phead">${p.joined?esc(p.name)+(i===S.hostId?' 👑':''):'Couch-Duell'}</div><div class="pbody">${phoneBody(i)}${skip}</div>`}
 function renderAll(){renderTV();P.forEach((_,i)=>renderPhone(i));$('#target').disabled=S.phase!=='lobby';musicUI()}
 
 /* =====================================================================
@@ -1530,7 +1690,10 @@ document.addEventListener('pointerdown',e=>{
   if(cd){e.preventDefault();unlockAudio();const ci=+cd.dataset.circle;P[ci].circleHint='';drawing={i:ci,el:cd,pts:[]};addCirclePt(e);return}
   const b=e.target.closest('[data-act="press"],[data-act="buzz"],[data-act="tap"],[data-act="stopw"],[data-act="pad"]');if(!b)return;e.preventDefault();unlockAudio();hit(b);
   const i=+b.dataset.p;
-  if(b.dataset.act==='buzz'){startListening(i);send(i,{type:'buzz'})} // Mikro sofort mit dem Buzzer-Druck starten
+  if(MODE==='phone')wake();
+  if(b.dataset.act==='tap'&&MODE==='phone'&&S.cur&&S.cur.r&&S.cur.r.state==='go'){ // eigenen Zähler sofort hochzählen
+    const r=S.cur.r,n=r.taps[i]=Math.min(r.goal,(r.taps[i]||0)+1),ce=document.getElementById('tapc'+i);if(ce)ce.textContent=n+' / '+r.goal}
+  if(b.dataset.act==='buzz'){NET.buzzAt=now();startListening(i);send(i,{type:'buzz'})} // Mikro sofort mit dem Buzzer-Druck starten
   else if(b.dataset.act==='tap')send(i,{type:'tap'});
   else if(b.dataset.act==='stopw')send(i,{type:'stopw',t:now()});
   else if(b.dataset.act==='pad'){const k=+b.dataset.v;send(i,S.cur&&S.cur.type==='memo'?{type:'memo',k}:{type:'pick',v:k,t:now()})}
@@ -1553,12 +1716,17 @@ document.addEventListener('pointerup',e=>{
 });
 document.addEventListener('pointercancel',()=>{swipeStart=null;if(drawing){const i=drawing.i;drawing=null;renderPhone(i)}});
 document.addEventListener('input',e=>{const t=e.target;if(!t.dataset||!t.dataset.in)return;const p=P[+t.dataset.p];
-  ({name:()=>p.draftName=t.value,guess:()=>p.draftGuess=t.value,say:()=>p.draftSay=t.value})[t.dataset.in]()});
+  ({name:()=>p.draftName=t.value,guess:()=>p.draftGuess=t.value,say:()=>p.draftSay=t.value})[t.dataset.in]();
+  if(MODE==='phone'&&ME!=null)lastH=normH(phoneHTML(ME))});
 document.addEventListener('keydown',e=>{
   const t=e.target;
+  // Fernseher: OK auf der Fernbedienung (oder Enter/Leertaste) startet bzw. geht weiter – wie der Gastgeber am Handy
+  if(MODE==='tv'){unlockAudio();
+    if((e.key==='Enter'||e.key===' ')&&S.hostId!=null){e.preventDefault();handle(S.hostId,{type:S.phase==='lobby'?'start':S.phase==='final'?'restart':'next'})}
+    return}
   if(t.dataset&&t.dataset.in&&e.key==='Enter'){unlockAudio();const i=+t.dataset.p;({name:joinFrom,guess:submitGuess,say:submitSay})[t.dataset.in](i);return}
   if(t.tagName==='INPUT'||t.tagName==='SELECT')return;
-  if(['1','2','3','4'].includes(e.key)&&S.phase==='play'){const i=+e.key-1;if(!P[i].joined)return;unlockAudio();
+  if(MODE==='demo'&&['1','2','3','4'].includes(e.key)&&S.phase==='play'){const i=+e.key-1;if(!P[i].joined)return;unlockAudio();
     const btn=document.querySelector(`#ps${i} .bigbtn`);if(btn)hit(btn);
     if(S.cur.type==='reaction')send(i,{type:'press',t:now()});
     else if(S.cur.type==='tap')send(i,{type:'tap'});
@@ -1568,7 +1736,7 @@ document.addEventListener('keydown',e=>{
 $('#target').addEventListener('change',e=>{if(S.phase==='lobby')S.target=+e.target.value});
 $('#music').addEventListener('change',e=>{if(S.phase!=='lobby')return;S.music=e.target.value;DZ.tracks=[];DZ.promise=null;renderTV()});
 // Prüfen, ob Deezer erreichbar ist (in der Claude-Vorschau blockiert, im normalen Browser ok)
-jsonp('https://api.deezer.com/chart/0/tracks?limit=1',6000).then(()=>{DZ.ok=true;if(S.phase==='lobby'&&S.music==='melodien')S.music='evergreens';musicUI();if(S.phase==='lobby')renderTV()})
+if(MODE!=='phone')jsonp('https://api.deezer.com/chart/0/tracks?limit=1',6000).then(()=>{DZ.ok=true;if(S.phase==='lobby'&&S.music==='melodien')S.music='evergreens';musicUI();if(S.phase==='lobby')renderTV()})
   .catch(()=>{DZ.ok=false;musicUI()});
 
 /* =====================================================================
@@ -1580,13 +1748,18 @@ jsonp('https://api.deezer.com/chart/0/tracks?limit=1',6000).then(()=>{DZ.ok=true
     b.style.cssText=`left:${Math.random()*100}%;width:${s}cqw;height:${s}cqw;animation-duration:${14+Math.random()*16}s;animation-delay:-${Math.random()*25}s;opacity:${.4+Math.random()*.5}`;bg.appendChild(b)}
   $('#phones').innerHTML=P.map(p=>`<div class="phonebox"><div class="phone" id="phone${p.id}"><div class="notch"></div><div class="pscreen" id="ps${p.id}"></div></div><small>Handy ${p.id+1}</small></div>`).join('');
   renderAll();aiStatus();
+  if(MODE==='tv'){
+    hostNet();setInterval(hostWatch,4000);
+    document.addEventListener('pointerdown',unlockAudio);
+    unlockAudio();if(AC&&AC.state==='suspended')$('#tvnote').hidden=false}
+  if(MODE==='phone')phoneNet();
   // Artifact-Fähigkeiten: KI-Fragen (sample) und Diktat – fehlen sie, läuft alles mit Fallbacks
   try{if(window.claude&&typeof claude.use==='function'){
     claude.use('sample').then(s=>{SAMPLE=s||null;aiStatus()}).catch(()=>{});
     claude.use('dictation').then(d=>{if(d){DICT=d;try{wireDict(d)}catch(e){DICT=null}}}).catch(()=>{});
   }}catch(e){}
   (function loop(){
-    if(S.phase==='play'){const r=S.cur.r,b=document.getElementById('tbar');
+    if(MODE!=='phone'&&S.phase==='play'){const r=S.cur.r,b=document.getElementById('tbar');
       let f=null;if(r.clock)f=remain(r.clock)/r.clock.total;else if(r.deadline)f=(r.deadline-now())/r.dur;
       if(b&&f!=null){f=Math.max(0,f);b.style.transform=`scaleX(${f})`;b.classList.toggle('low',f<.25);b.classList.toggle('paused',!!(r.clock&&!r.clock.running))}
       if(r.clock&&r.state==='open'&&remain(r.clock)<=0)endRound(null);
