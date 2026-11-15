@@ -451,7 +451,7 @@ body.mode-phone .pscreen{border-radius:0;padding-top:env(safe-area-inset-top);pa
   <p>Trag deinen API-Key aus Google AI Studio ein. Er wird nur hier in diesem Browser gespeichert und direkt an Google geschickt. Gib die Datei mit gespeichertem Key nicht weiter.</p>
   <div class="gemrow">
     <input id="gemKey" type="password" placeholder="API-Key (beginnt meist mit AIza…)" autocomplete="off">
-    <input id="gemModel" type="text" placeholder="Modell" value="gemini-flash-latest" autocomplete="off">
+    <input id="gemModel" type="text" placeholder="Modelle, mit Komma getrennt" value="gemini-3.1-flash-lite, gemini-3.5-flash-lite" autocomplete="off">
   </div>
   <div class="gemrow">
     <button class="hbtn" data-act="gemSave">Speichern</button>
@@ -483,7 +483,7 @@ body.mode-phone .pscreen{border-radius:0;padding-top:env(safe-area-inset-top);pa
    Ohne Parameter: Fernseher (zeigt QR-Code, führt das Spiel) · ?r=CODE oder #CODE: Handy-Controller
    ?demo: Prototyp-Ansicht mit Fernseher und vier simulierten Handys auf einer Seite
    ===================================================================== */
-const APPV='2026-11-15i'; // bei Änderungen am Protokoll zwischen Fernseher und Handy hochzählen
+const APPV='2026-11-15j'; // bei Änderungen am Protokoll zwischen Fernseher und Handy hochzählen
 const QS=new URLSearchParams(location.search);
 let ROOM=(QS.get('r')||(/^#[A-Za-z0-9]{4}$/.test(location.hash)?location.hash.slice(1):'')).toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,4);
 const MODE=typeof Peer==='undefined'||QS.has('demo')?'demo':(QS.has('r')||ROOM?'phone':'tv');
@@ -727,13 +727,17 @@ const AI_SPECS={
     fix:x=>({q:x.q.slice(0,60),items:x.items.map(i=>[String(i[0]).slice(0,28),String(i[1]||'').slice(0,20)]),ai:true})}
 };
 /* ---------- Gemini (eigener API-Key, für die Datei außerhalb der Claude-Vorschau) ---------- */
-const GEM={key:'',model:'gemini-flash-latest',think:false};
-try{GEM.key=localStorage.getItem('cd_gem_key')||'';GEM.model=localStorage.getItem('cd_gem_model')||GEM.model}catch(e){}
+// Abwechselnd zwei schnelle Modelle: verteilt die Anfragen und der zweite Versuch läuft automatisch auf dem anderen Modell
+const GEM_MODELS=['gemini-3.1-flash-lite','gemini-3.5-flash-lite'];
+const GEM={key:'',models:[...GEM_MODELS],turn:0,last:'',think:false};
+const parseModels=v=>{const m=String(v||'').split(/[\s,]+/).filter(x=>/^[\w.-]+$/.test(x)&&x!=='gemini-flash-latest');return m.length?m:[...GEM_MODELS]};
+try{GEM.key=localStorage.getItem('cd_gem_key')||'';GEM.models=parseModels(localStorage.getItem('cd_gem_model'))}catch(e){}
 // In der Claude-Vorschau fragt das Spiel Claude (Gemini ist dort blockiert), sonst Gemini, falls ein Key hinterlegt ist
 const aiProvider=()=>SAMPLE?'Claude':(GEM.key?'Gemini':null);
 // stream=true: Antwort kommt Stück für Stück (SSE) – abgebrochen wird nur, wenn 60 s lang nichts mehr kommt
-async function geminiText(prompt,json=true,stream=false){
-  const url=`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(GEM.model)}:${stream?'streamGenerateContent?alt=sse&':'generateContent?'}key=${encodeURIComponent(GEM.key)}`;
+async function geminiText(prompt,json=true,stream=false,model){
+  if(!model)model=GEM.models[GEM.turn++%GEM.models.length];GEM.last=model;
+  const url=`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:${stream?'streamGenerateContent?alt=sse&':'generateContent?'}key=${encodeURIComponent(GEM.key)}`;
   // Ohne langes „Nachdenken“ antwortet Gemini viel schneller; kennt das Modell die Einstellung nicht, geht es ohne weiter
   const body={contents:[{role:'user',parts:[{text:prompt}]}],generationConfig:{...(json?{responseMimeType:'application/json'}:{}),...(GEM.think?{}:{thinkingConfig:{thinkingBudget:0}})}};
   const ctl=new AbortController();let why='',idle=null;
@@ -744,7 +748,7 @@ async function geminiText(prompt,json=true,stream=false){
     arm(stream?60000:90000);let res;
     try{res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:ctl.signal})}catch(e){throw fail(e)}
     if(!res.ok){const d=await res.json().catch(()=>({})),m=(d.error&&d.error.message)||('HTTP '+res.status);
-      if(res.status===400&&!GEM.think&&/think/i.test(m)){GEM.think=true;clearTimeout(idle);clearTimeout(hard);return geminiText(prompt,json,stream)}
+      if(res.status===400&&!GEM.think&&/think/i.test(m)){GEM.think=true;clearTimeout(idle);clearTimeout(hard);return geminiText(prompt,json,stream,model)}
       throw Object.assign(new Error(m),{code:res.status===429?'rate_limited':(res.status===400||res.status===401||res.status===403)?'bad_key':'error'})}
     const txt=d=>((d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.candidates[0].content.parts)||[]).map(p=>p.text||'').join('');
     if(!stream||!res.body||!res.body.getReader){const d=await res.json().catch(()=>({}));return txt(d)}
@@ -777,14 +781,14 @@ async function aiBatch(types){
   try{
     let res;const t0=now();
     try{res=await askJSON(prompt,true)}catch(e){if(e&&(e.code==='not_granted'||e.code==='bad_key'))throw e; // ein zweiter Versuch bei Netz-/Limit-Fehlern
-      AI.got=0;await new Promise(r=>setTimeout(r,e&&e.code==='rate_limited'?15000:2500));res=await askJSON(prompt,true)}
+      AI.got=0;await new Promise(r=>setTimeout(r,3000));/* läuft dank Rotation auf dem anderen Modell */res=await askJSON(prompt,true)}
     AI.ms=now()-t0;const bad=[];
     for(const t of types){const sp=AI_SPECS[t],raw=res&&!Array.isArray(res)&&res[t]!==undefined?res[t]:(types.length===1?res:null);
       let items=[];try{const arr=sp.parse?sp.parse(raw):Array.isArray(raw)?raw:(raw&&Array.isArray(raw.items)?raw.items:[]);
         items=arr.filter(x=>{try{return x&&sp.check(x)}catch(e){return false}}).map(sp.fix)}catch(e){}
       if(items.length>=4){AI.pool[t]=shuffle(items);AI.state[t]='ready'}else{AI.state[t]='error';bad.push(GAMES[t].name)}}
     if(bad.length)AI.err=`${bad.join(', ')}: Antwort unbrauchbar`;
-  }catch(e){types.forEach(t=>{if(AI.state[t]==='loading')AI.state[t]='error'});AI.err=String((e&&e.message)||e).slice(0,90);
+  }catch(e){types.forEach(t=>{if(AI.state[t]==='loading')AI.state[t]='error'});AI.err=`${GEM.last?GEM.last+': ':''}${String((e&&e.message)||e).slice(0,90)}`;
     if(e&&e.code==='not_granted'){aiOn=false;AI.denied=true}}
   aiStatus();
 }
@@ -801,7 +805,7 @@ function setGemKey(key){
   if(!key){AIMSG={t:'Key gelöscht – es gibt die eingebauten Fragen.',ok:null};renderAll();return}
   AIMSG={t:'Teste die Verbindung …',ok:null};renderAll();
   geminiText('Antworte ausschließlich mit diesem JSON: {"ok":true}')
-    .then(t=>{AIMSG=/ok/.test(t)?{t:`Verbindung klappt ✓ (${GEM.model})`,ok:true}:{t:'Antwort kam, aber unerwartet.',ok:false}})
+    .then(t=>{AIMSG=/ok/.test(t)?{t:`Verbindung klappt ✓ (${GEM.last})`,ok:true}:{t:'Antwort kam, aber unerwartet.',ok:false}})
     .catch(e=>{AIMSG={t:(e.code==='bad_key'?'Key ungültig: ':e.code==='rate_limited'?'Limit erreicht: ':'Fehler: ')+String(e.message||'').slice(0,90),ok:false}})
     .finally(()=>{if(GEM.key===key)renderAll()})}
 // Wird direkt aus dem Klick des Gastgebers gestartet (erste Nutzung fragt einmal nach Erlaubnis)
@@ -1868,18 +1872,18 @@ document.addEventListener('click',e=>{
   const b=e.target.closest('[data-act]');if(!b||b.disabled)return;unlockAudio();
   const a=b.dataset.act;
   if(a==='mute'){muted=!muted;b.textContent=muted?'🔇':'🔊';bgmUpdate();if(muted)stopMusic();else if(S.phase==='play'&&S.cur.type==='music'&&S.cur.r.state==='open')playBuf(S.cur.r.clip,true);return}
-  if(a==='gemPanel'){const pn=$('#gemPanel');pn.hidden=!pn.hidden;$('#gemKey').value=GEM.key;$('#gemModel').value=GEM.model;return}
+  if(a==='gemPanel'){const pn=$('#gemPanel');pn.hidden=!pn.hidden;$('#gemKey').value=GEM.key;$('#gemModel').value=GEM.models.join(', ');return}
   if(a==='gemSave'||a==='gemClear'||a==='gemTest'){
     const msg=$('#gemMsg'),say=(t,col)=>{msg.textContent=t;msg.style.color=col||'var(--muted)'};
     if(a==='gemClear'){$('#gemKey').value=''}
-    GEM.key=$('#gemKey').value.trim();GEM.model=$('#gemModel').value.trim()||'gemini-flash-latest';
-    try{GEM.key?localStorage.setItem('cd_gem_key',GEM.key):localStorage.removeItem('cd_gem_key');localStorage.setItem('cd_gem_model',GEM.model)}catch(e){}
+    GEM.key=$('#gemKey').value.trim();GEM.models=parseModels($('#gemModel').value);
+    try{GEM.key?localStorage.setItem('cd_gem_key',GEM.key):localStorage.removeItem('cd_gem_key');localStorage.setItem('cd_gem_model',GEM.models.join(','))}catch(e){}
     AI.state={};AI.pool={};AI.denied=false;aiOn=true;aiStatus();
     if(a==='gemClear')return say('Key gelöscht.');
     if(a==='gemSave')return say(SAMPLE?'Gespeichert. Hier in der Claude-Vorschau nutzt das Spiel Claude, Gemini greift in der Datei.':(GEM.key?'Gespeichert ✓':'Kein Key eingetragen.'),GEM.key?'#1fb57f':'');
     if(!GEM.key)return say('Bitte erst einen Key eintragen.','#e8590c');
     say('Teste …');
-    geminiText('Antworte ausschließlich mit diesem JSON: {"ok":true}').then(t=>say(/ok/.test(t)?`Verbindung klappt ✓ (${GEM.model})`:'Antwort kam, aber unerwartet: '+t.slice(0,60),'#1fb57f'))
+    geminiText('Antworte ausschließlich mit diesem JSON: {"ok":true}').then(t=>say(/ok/.test(t)?`Verbindung klappt ✓ (${GEM.last})`:'Antwort kam, aber unerwartet: '+t.slice(0,60),'#1fb57f'))
       .catch(e=>say((e.code==='bad_key'?'Key oder Modellname ungültig: ':e.code==='rate_limited'?'Limit erreicht: ':(SAMPLE?'In der Claude-Vorschau blockiert – bitte in der Datei testen. ':'Fehler: '))+e.message.slice(0,120),'#e8590c'));
     return}
   if(a==='ai'){if(!aiProvider()||AI.denied)return;aiOn=!aiOn;aiStatus();return}
